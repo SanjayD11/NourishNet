@@ -1,73 +1,116 @@
-# Welcome to your Lovable project
+NourishNet
 
-## Project info
+NourishNet is a modern web application that helps communities reduce food waste by connecting people who have excess food with those who need it. Users can share food items, request food, and manage requests in a seamless, intuitive interface.
 
-**URL**: https://lovable.dev/projects/da78573e-2d05-40f1-bc0e-0fc9cc028646
+Project Overview
 
-## How can I edit this code?
+Live Demo / URL: https://nourish-net-sepia.vercel.app/  
 
-There are several ways of editing your application.
+Tech Stack: Vite, TypeScript, React, Tailwind CSS, shadcn-ui, Supabase (for backend and authentication)
 
-**Use Lovable**
+NourishNet allows users to:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/da78573e-2d05-40f1-bc0e-0fc9cc028646) and start prompting.
+Share Food – Post available food items with details such as best-before date, quantity, and location.
 
-Changes made via Lovable will be committed automatically to this repo.
+Request Food – Browse available food posts and submit requests.
 
-**Use your preferred IDE**
+Manage Requests – Track incoming and outgoing requests, accept or decline requests, mark collected items, and provide ratings/feedback.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Notifications – Get notified about new requests or status updates in real-time.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Features
 
-Follow these steps:
+User Authentication: Secure signup and login using email/password via Supabase.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Real-Time Updates: Requests and posts update automatically without refreshing the page.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Request Status Management: Statuses include Pending, Accepted, Declined, Completed, Collected, Expired, and Cancelled.
 
-# Step 3: Install the necessary dependencies.
-npm i
+Communication Tools: Users can call or WhatsApp each other directly from the app.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Rating & Feedback System: Requesters can rate food providers after collection to encourage trust and quality.
+
+Responsive Design: Fully mobile-friendly and desktop-compatible using Tailwind CSS.
+
+Getting Started (Local Development)
+
+Follow these steps to run the project locally:
+
+Clone the repository:
+
+git clone <YOUR_GITHUB_REPO_URL>
+
+
+Navigate to the project folder:
+
+cd NourishNet
+
+
+Install dependencies:
+
+npm install
+
+
+Start the development server:
+
 npm run dev
-```
 
-**Edit a file directly in GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Open your browser and visit the URL displayed in the terminal (usually http://localhost:5173).
 
-**Use GitHub Codespaces**
+Folder Structure
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+A quick overview of key folders:
 
-## What technologies are used for this project?
+src/
+├─ components/        # Reusable UI components
+├─ hooks/             # Custom React hooks (requests, auth, toast notifications)
+├─ integrations/      # Supabase client setup
+├─ pages/             # React pages/routes
+├─ styles/            # Tailwind CSS and global styles
+└─ utils/             # Helper functions
 
-This project is built with:
+Environment Variables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Create a .env file in the root of the project with the following variables:
 
-## How can I deploy this project?
+VITE_SUPABASE_URL=<YOUR_SUPABASE_URL>
+VITE_SUPABASE_ANON_KEY=<YOUR_SUPABASE_ANON_KEY>
 
-Simply open [Lovable](https://lovable.dev/projects/da78573e-2d05-40f1-bc0e-0fc9cc028646) and click on Share -> Publish.
 
-## Can I connect a custom domain to my Lovable project?
+These are required to connect the frontend to your Supabase backend.
 
-Yes, you can!
+Deployment
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+You can deploy the project on any static hosting platform that supports Vite, such as Vercel, Netlify, or Render.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+For example, to deploy on Vercel:
+
+Push your changes to GitHub.
+
+Log in to Vercel
+ and import your GitHub repository.
+
+Vercel will automatically detect the Vite project and deploy it.
+
+Contributing
+
+We welcome contributions to make NourishNet better!
+
+Fork the repository.
+
+Create a feature branch: git checkout -b feature/your-feature-name
+
+Commit your changes: git commit -m "Add some feature"
+
+Push to your branch: git push origin feature/your-feature-name
+
+Open a Pull Request.
+
+Contact
+
+For questions, feedback, or collaboration:
+
+Email : sanjayraju5164@gmail.com
+
+GitHub : https://github.com/SanjayD11 
