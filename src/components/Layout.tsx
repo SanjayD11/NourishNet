@@ -79,14 +79,14 @@ export default function Layout({ children }: LayoutProps) {
               })}
             </nav>
 
-            <div className="flex items-center gap-1.5 sm:gap-3 ml-auto">
-              <LanguageSelector />
-              <ThemeToggle />
+            <div className="flex items-center gap-0 sm:gap-3 ml-auto">
+              <div className="scale-[0.85] sm:scale-100 flex items-center justify-center"><LanguageSelector /></div>
+              <div className="scale-[0.85] sm:scale-100 flex items-center justify-center -ml-1 sm:ml-0"><ThemeToggle /></div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-transform duration-200 hover:scale-105 ml-1"
+                    className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-transform duration-200 hover:scale-105 ml-0.5 sm:ml-1"
                   >
                     <Avatar className="w-8 h-8 sm:w-9 sm:h-9">
                       <AvatarImage src="" />
@@ -147,10 +147,10 @@ export default function Layout({ children }: LayoutProps) {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
-        className="md:hidden fixed bottom-4 left-4 right-4 z-50"
+        className="md:hidden fixed bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 z-50 pointer-events-none"
       >
-        <div className="glass-card px-1.5 py-1.5 shadow-xl mx-auto max-w-sm sm:max-w-md w-full">
-          <div className="flex items-center justify-between gap-1 w-full">
+        <div className="glass-card px-1 py-1 sm:px-1.5 sm:py-1.5 shadow-xl mx-auto w-full max-w-[100vw] sm:max-w-md pointer-events-auto">
+          <div className="flex items-center justify-between gap-0 sm:gap-1 w-full">
             {navigation.map(item => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
@@ -159,13 +159,13 @@ export default function Layout({ children }: LayoutProps) {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`relative flex flex-col items-center justify-center gap-1 p-1.5 sm:p-2.5 rounded-xl transition-all duration-200 flex-1 h-14 ${isActive
+                  className={`relative flex flex-col items-center justify-center gap-0.5 sm:gap-1 p-1 sm:p-2.5 rounded-[10px] sm:rounded-xl transition-all duration-200 flex-1 min-w-0 h-14 ${isActive
                     ? 'bg-primary text-primary-foreground shadow-md'
                     : 'text-muted-foreground hover:text-foreground active:bg-accent'
                     }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-[10px] sm:text-xs font-medium text-center leading-none tracking-tight whitespace-nowrap truncate w-full px-0.5">{item.name}</span>
+                  <span className="text-[9px] sm:text-xs font-semibold text-center tracking-tighter sm:tracking-normal whitespace-nowrap truncate w-full px-0.5">{item.name}</span>
                   {showRequestsBadge && (
                     <span className="absolute top-1.5 right-2 flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
