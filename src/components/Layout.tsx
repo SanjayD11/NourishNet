@@ -41,15 +41,15 @@ export default function Layout({ children }: LayoutProps) {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-        className="glass-card mx-4 mt-4 mb-6"
+        className="glass-card mx-3 mt-3 sm:mx-4 sm:mt-4 mb-4 sm:mb-6"
       >
-        <div className="px-4 sm:px-6 py-4">
+        <div className="px-3 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2 sm:gap-3 group flex-shrink-0">
               <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
                 <Leaf className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
               </div>
-              <span className="font-bold text-foreground tracking-tight" style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)' }}>NourishNet</span>
+              <span className="font-bold text-foreground tracking-tight whitespace-nowrap" style={{ fontSize: 'clamp(1rem, 3vw, 1.5rem)' }}>NourishNet</span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-1">
@@ -79,16 +79,16 @@ export default function Layout({ children }: LayoutProps) {
               })}
             </nav>
 
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 ml-auto">
               <LanguageSelector />
               <ThemeToggle />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-transform duration-200 hover:scale-105"
+                    className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-transform duration-200 hover:scale-105 ml-1"
                   >
-                    <Avatar className="w-9 h-9">
+                    <Avatar className="w-8 h-8 sm:w-9 sm:h-9">
                       <AvatarImage src="" />
                       <AvatarFallback>
                         {user?.user_metadata?.full_name?.[0] || user?.email?.[0] || 'U'}
@@ -149,8 +149,8 @@ export default function Layout({ children }: LayoutProps) {
         transition={{ duration: 0.4, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
         className="md:hidden fixed bottom-4 left-4 right-4 z-50"
       >
-        <div className="glass-card px-2 py-2 shadow-xl">
-          <div className="flex items-center justify-around">
+        <div className="glass-card px-1.5 py-1.5 shadow-xl mx-auto max-w-sm sm:max-w-md w-full">
+          <div className="flex items-center justify-between gap-1 w-full">
             {navigation.map(item => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
@@ -159,13 +159,13 @@ export default function Layout({ children }: LayoutProps) {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`relative flex flex-col items-center gap-1 p-2.5 rounded-xl transition-all duration-200 min-w-[60px] ${isActive
+                  className={`relative flex flex-col items-center justify-center gap-1 p-1.5 sm:p-2.5 rounded-xl transition-all duration-200 flex-1 h-14 ${isActive
                     ? 'bg-primary text-primary-foreground shadow-md'
                     : 'text-muted-foreground hover:text-foreground active:bg-accent'
                     }`}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-[10px] font-medium">{item.name}</span>
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-[10px] sm:text-xs font-medium text-center leading-none tracking-tight whitespace-nowrap truncate w-full px-0.5">{item.name}</span>
                   {showRequestsBadge && (
                     <span className="absolute top-1.5 right-2 flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
