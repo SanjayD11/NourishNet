@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,6 +10,7 @@ import { MapPin, Phone, MessageCircle, Calendar, Package, Clock } from 'lucide-r
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ProviderRatingDisplay } from '@/components/ProviderRatingDisplay';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 interface FoodPost {
   id: string;
@@ -51,6 +52,7 @@ interface UserStats {
 }
 
 export default function ProviderProfileModal({ post, isOpen, onClose }: ProviderProfileModalProps) {
+  const { t } = useLanguage();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -62,7 +64,7 @@ export default function ProviderProfileModal({ post, isOpen, onClose }: Provider
 
   const fetchUserStats = async () => {
     if (!post?.user_id) return;
-    
+
     setLoading(true);
     try {
       // Fetch user's food posts
@@ -113,24 +115,18 @@ export default function ProviderProfileModal({ post, isOpen, onClose }: Provider
     const now = new Date();
     const postDate = new Date(dateString);
     const diffInHours = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60 * 60));
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    return `${Math.floor(diffInHours / 24)}d ago`;
+    if (diffInHours < 1) return t('time.justNow');
+    if (diffInHours < 24) return `${diffInHours} ${t('time.hoursAgo')}`;
+    return `${Math.floor(diffInHours / 24)} ${t('time.daysAgo')}`;
   };
 
   if (!post || !isOpen) return null;
 
   return (
-    <AnimatePresence>
+    <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
-            className="glass-card border-0"
-          >
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 border-0 bg-transparent shadow-none">
+          <div className="glass-card border-0">
             {/* Header */}
             <DialogHeader className="p-6 pb-0">
               <div className="flex items-start gap-4">
@@ -193,7 +189,7 @@ export default function ProviderProfileModal({ post, isOpen, onClose }: Provider
                         <div className="text-sm text-muted-foreground">Total Posts</div>
                       </CardContent>
                     </Card>
-                    
+
                     <Card className="glass-panel border-0">
                       <CardContent className="p-4 text-center">
                         <div className="flex items-center justify-center w-12 h-12 bg-green-500/10 rounded-full mx-auto mb-2">
@@ -204,13 +200,13 @@ export default function ProviderProfileModal({ post, isOpen, onClose }: Provider
                       </CardContent>
                     </Card>
                   </div>
-                  
+
                   {/* Dynamic Rating Display */}
                   <Card className="glass-panel border-0">
                     <CardContent className="p-4">
-                      <ProviderRatingDisplay 
-                        providerId={post.user_id} 
-                        showBreakdown={true} 
+                      <ProviderRatingDisplay
+                        providerId={post.user_id}
+                        showBreakdown={true}
                       />
                     </CardContent>
                   </Card>
@@ -243,7 +239,7 @@ export default function ProviderProfileModal({ post, isOpen, onClose }: Provider
                           </Button>
                         </div>
                       )}
-                      
+
                       {post.profiles?.whatsapp_number && (
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -260,7 +256,7 @@ export default function ProviderProfileModal({ post, isOpen, onClose }: Provider
                           </Button>
                         </div>
                       )}
-                      
+
                       {!post.profiles?.phone_number && !post.profiles?.whatsapp_number && (
                         <p className="text-muted-foreground text-sm">
                           Contact information not available. Use the request system to connect.
@@ -330,9 +326,9 @@ export default function ProviderProfileModal({ post, isOpen, onClose }: Provider
                 </motion.div>
               )}
             </div>
-          </motion.div>
+          </div>
         </DialogContent>
       </Dialog>
-    </AnimatePresence>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/providers/LanguageProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,7 @@ export default function Profile() {
   const {
     user
   } = useAuth();
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [foodPosts, setFoodPosts] = useState<FoodPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,18 +229,18 @@ export default function Profile() {
   };
   if (loading) {
     return <div className="max-w-4xl mx-auto space-y-6 px-1">
-        <Card className="glass-card">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
-              <div className="w-20 h-20 bg-muted animate-pulse rounded-full flex-shrink-0" />
-              <div className="space-y-2 flex-1 w-full text-center sm:text-left">
-                <div className="h-6 bg-muted animate-pulse rounded w-1/3 mx-auto sm:mx-0" />
-                <div className="h-4 bg-muted animate-pulse rounded w-1/2 mx-auto sm:mx-0" />
-              </div>
+      <Card className="glass-card">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
+            <div className="w-20 h-20 bg-muted animate-pulse rounded-full flex-shrink-0" />
+            <div className="space-y-2 flex-1 w-full text-center sm:text-left">
+              <div className="h-6 bg-muted animate-pulse rounded w-1/3 mx-auto sm:mx-0" />
+              <div className="h-4 bg-muted animate-pulse rounded w-1/2 mx-auto sm:mx-0" />
             </div>
-          </CardContent>
-        </Card>
-      </div>;
+          </div>
+        </CardContent>
+      </Card>
+    </div>;
   }
   return <motion.div initial={{
     opacity: 0,
@@ -247,77 +249,77 @@ export default function Profile() {
     opacity: 1,
     y: 0
   }} className="max-w-4xl mx-auto space-y-4 sm:space-y-6 px-1">
-      {/* Profile Header */}
-      <Card className="glass-card">
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex flex-col gap-4 sm:gap-6">
-            {/* Avatar and Info Section */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+    {/* Profile Header */}
+    <Card className="glass-card">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex flex-col gap-4 sm:gap-6">
+          {/* Avatar and Info Section */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
 
-              <AvatarUpload userId={user?.id || ''} currentAvatarUrl={profile?.avatar_url} fallbackText={profile?.name?.[0] || profile?.full_name?.[0] || user?.email?.[0] || 'U'} onAvatarUpdate={handleAvatarUpdate} disabled={loading || saving} />
+            <AvatarUpload userId={user?.id || ''} currentAvatarUrl={profile?.avatar_url} fallbackText={profile?.name?.[0] || profile?.full_name?.[0] || user?.email?.[0] || 'U'} onAvatarUpdate={handleAvatarUpdate} disabled={loading || saving} />
 
-              <div className="flex-1 space-y-2 w-full text-center sm:text-left">
-                {editing ? <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="name">Name *</Label>
-                      <Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Your full name" className={validationErrors.name ? 'border-destructive focus:border-destructive' : ''} />
-                      {validationErrors.name && <div className="flex items-center gap-2 text-sm text-destructive mt-1">
-                          <AlertTriangle className="w-4 h-4" />
-                          <span>{validationErrors.name}</span>
-                        </div>}
-                    </div>
-                    <div>
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea id="bio" name="bio" value={formData.bio} onChange={handleInputChange} placeholder="Tell us about yourself..." rows={3} />
-                    </div>
-                    <div>
-                      <Label htmlFor="location">Location/Address *</Label>
-                      <Input id="location" name="location" value={formData.location} onChange={handleInputChange} placeholder="Your detailed address" className={validationErrors.location ? 'border-destructive focus:border-destructive' : ''} required />
-                      {validationErrors.location ? <div className="flex items-start gap-2 text-sm text-destructive mt-1 bg-destructive/5 p-3 rounded-lg border border-destructive/20">
-                          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                          <span>{validationErrors.location}</span>
-                        </div> : <p className="text-xs text-muted-foreground mt-1">
-                          Include street address, landmarks, or clear directions.
-                        </p>}
-                    </div>
-                    <div>
-                      <Label htmlFor="phone_number">Phone Number *</Label>
-                      <Input id="phone_number" name="phone_number" value={formData.phone_number} onChange={handleInputChange} placeholder="+91 98765 43210" type="tel" className={validationErrors.phone_number ? 'border-destructive focus:border-destructive' : ''} />
-                      {validationErrors.phone_number && <div className="flex items-center gap-2 text-sm text-destructive mt-1">
-                          <AlertTriangle className="w-4 h-4" />
-                          <span>{validationErrors.phone_number}</span>
-                        </div>}
-                    </div>
-                    <div>
-                      <Label htmlFor="whatsapp_number">WhatsApp Number *</Label>
-                      <Input id="whatsapp_number" name="whatsapp_number" value={formData.whatsapp_number} onChange={handleInputChange} placeholder="91 98765 43210" type="tel" className={validationErrors.whatsapp_number ? 'border-destructive focus:border-destructive' : ''} />
-                      {validationErrors.whatsapp_number && <div className="flex items-center gap-2 text-sm text-destructive mt-1">
-                          <AlertTriangle className="w-4 h-4" />
-                          <span>{validationErrors.whatsapp_number}</span>
-                        </div>}
-                    </div>
-                  </div> : <>
-                    <h1 className="text-xl sm:text-2xl font-bold">
-                      {profile?.name || profile?.full_name || 'Anonymous User'}
-                    </h1>
-                    <p className="text-muted-foreground text-sm sm:text-base break-all">{user?.email}</p>
-                    {profile?.bio && <p className="text-foreground text-sm sm:text-base">{profile.bio}</p>}
-                    {profile?.location && <div className="flex items-center justify-center sm:justify-start text-muted-foreground text-sm">
-                        <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-                        <span className="break-words">{profile.location}</span>
-                      </div>}
-                  </>}
-              </div>
+            <div className="flex-1 space-y-2 w-full text-center sm:text-left">
+              {editing ? <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">{t('profile.name')} *</Label>
+                  <Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Your full name" className={validationErrors.name ? 'border-destructive focus:border-destructive' : ''} />
+                  {validationErrors.name && <div className="flex items-center gap-2 text-sm text-destructive mt-1">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>{validationErrors.name}</span>
+                  </div>}
+                </div>
+                <div>
+                  <Label htmlFor="bio">{t('profile.bio')}</Label>
+                  <Textarea id="bio" name="bio" value={formData.bio} onChange={handleInputChange} placeholder="Tell us about yourself..." rows={3} />
+                </div>
+                <div>
+                  <Label htmlFor="location">{t('profile.location')} *</Label>
+                  <Input id="location" name="location" value={formData.location} onChange={handleInputChange} placeholder="Your detailed address" className={validationErrors.location ? 'border-destructive focus:border-destructive' : ''} required />
+                  {validationErrors.location ? <div className="flex items-start gap-2 text-sm text-destructive mt-1 bg-destructive/5 p-3 rounded-lg border border-destructive/20">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>{validationErrors.location}</span>
+                  </div> : <p className="text-xs text-muted-foreground mt-1">
+                    Include street address, landmarks, or clear directions.
+                  </p>}
+                </div>
+                <div>
+                  <Label htmlFor="phone_number">{t('profile.phone')} *</Label>
+                  <Input id="phone_number" name="phone_number" value={formData.phone_number} onChange={handleInputChange} placeholder="+91 98765 43210" type="tel" className={validationErrors.phone_number ? 'border-destructive focus:border-destructive' : ''} />
+                  {validationErrors.phone_number && <div className="flex items-center gap-2 text-sm text-destructive mt-1">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>{validationErrors.phone_number}</span>
+                  </div>}
+                </div>
+                <div>
+                  <Label htmlFor="whatsapp_number">{t('profile.whatsapp')} *</Label>
+                  <Input id="whatsapp_number" name="whatsapp_number" value={formData.whatsapp_number} onChange={handleInputChange} placeholder="91 98765 43210" type="tel" className={validationErrors.whatsapp_number ? 'border-destructive focus:border-destructive' : ''} />
+                  {validationErrors.whatsapp_number && <div className="flex items-center gap-2 text-sm text-destructive mt-1">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>{validationErrors.whatsapp_number}</span>
+                  </div>}
+                </div>
+              </div> : <>
+                <h1 className="text-xl sm:text-2xl font-bold">
+                  {profile?.name || profile?.full_name || t('profile.anonymousUser')}
+                </h1>
+                <p className="text-muted-foreground text-sm sm:text-base break-all">{user?.email}</p>
+                {profile?.bio && <p className="text-foreground text-sm sm:text-base">{profile.bio}</p>}
+                {profile?.location && <div className="flex items-center justify-center sm:justify-start text-muted-foreground text-sm">
+                  <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="break-words">{profile.location}</span>
+                </div>}
+              </>}
             </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:self-start">
-              {editing ? <>
-                  <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
-                    <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Saving...' : 'Save'}
-                  </Button>
-                  <Button variant="outline" className="w-full sm:w-auto" onClick={() => {
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:self-start">
+            {editing ? <>
+              <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
+                <Save className="w-4 h-4 mr-2" />
+                {saving ? t('profile.saving') : t('profile.save')}
+              </Button>
+              <Button variant="outline" className="w-full sm:w-auto" onClick={() => {
                 setEditing(false);
                 setValidationErrors({});
                 setFormData({
@@ -328,71 +330,71 @@ export default function Profile() {
                   whatsapp_number: profile?.whatsapp_number || ''
                 });
               }}>
-                    <X className="w-4 h-4 mr-2" />
-                    Cancel
-                  </Button>
-                </> : <Button onClick={() => setEditing(true)} className="w-full sm:w-auto">
-                  <Edit3 className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </Button>}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Food Posts */}
-      <Card className="glass-card overflow-hidden">
-        <CardHeader>
-          <CardTitle className="flex items-center text-lg sm:text-xl">
-            <Utensils className="w-5 h-5 mr-2 flex-shrink-0" />
-            <span>My Food Posts ({foodPosts.length})</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-6">
-          {foodPosts.length === 0 ? <div className="text-center py-6 sm:py-8">
-              <Utensils className="w-10 sm:w-12 h-10 sm:h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-base sm:text-lg font-medium mb-2">No food posts yet</h3>
-              <p className="text-muted-foreground text-sm sm:text-base mb-4">
-                Start sharing food with your community
-              </p>
-              <Button onClick={() => window.location.href = '/post-food'} className="w-full sm:w-auto">
-                Share Food
+                <X className="w-4 h-4 mr-2" />
+                {t('managePosts.close')}
               </Button>
-            </div> : <div className="space-y-3 sm:space-y-4">
-              {foodPosts.map(post => <motion.div key={post.id} initial={{
+            </> : <Button onClick={() => setEditing(true)} className="w-full sm:w-auto">
+              <Edit3 className="w-4 h-4 mr-2" />
+              {t('profile.editProfile')}
+            </Button>}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    {/* Food Posts */}
+    <Card className="glass-card overflow-hidden">
+      <CardHeader>
+        <CardTitle className="flex items-center text-lg sm:text-xl">
+          <Utensils className="w-5 h-5 mr-2 flex-shrink-0" />
+          <span>{t('profile.myFoodPosts')} ({foodPosts.length})</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-3 sm:p-6">
+        {foodPosts.length === 0 ? <div className="text-center py-6 sm:py-8">
+          <Utensils className="w-10 sm:w-12 h-10 sm:h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-base sm:text-lg font-medium mb-2">{t('profile.noPostsYet')}</h3>
+          <p className="text-muted-foreground text-sm sm:text-base mb-4">
+            {t('profile.startSharing')}
+          </p>
+          <Button onClick={() => window.location.href = '/post-food'} className="w-full sm:w-auto">
+            {t('profile.shareFood')}
+          </Button>
+        </div> : <div className="space-y-3 sm:space-y-4">
+          {foodPosts.map(post => <motion.div key={post.id} initial={{
             opacity: 0,
             y: 10
           }} animate={{
             opacity: 1,
             y: 0
           }} className="glass-panel p-3 sm:p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <h3 className="font-medium text-sm sm:text-base truncate">{post.food_title}</h3>
-                        <Badge variant={post.status === 'available' ? 'default' : 'secondary'} className="flex-shrink-0">
-                          {post.status}
-                        </Badge>
-                      </div>
-                      <p className="text-xs sm:text-sm mb-2 text-green-300 line-clamp-2">
-                        {post.description}
-                      </p>
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3 mr-1" />
-                        Posted on {formatDate(post.created_at)}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 w-full sm:w-auto">
-                      {post.status === 'available' ? <Button size="sm" variant="outline" className="flex-1 sm:flex-initial text-xs sm:text-sm" onClick={() => handlePostStatusUpdate(post.id, 'taken')}>
-                          Mark as Taken
-                        </Button> : <Button size="sm" variant="outline" className="flex-1 sm:flex-initial text-xs sm:text-sm" onClick={() => handlePostStatusUpdate(post.id, 'available')}>
-                          Mark Available
-                        </Button>}
-                    </div>
-                  </div>
-                </motion.div>)}
-            </div>}
-        </CardContent>
-      </Card>
-    </motion.div>;
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <h3 className="font-medium text-sm sm:text-base truncate">{post.food_title}</h3>
+                  <Badge variant={post.status === 'available' ? 'default' : 'secondary'} className="flex-shrink-0">
+                    {post.status}
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm mb-2 text-green-300 line-clamp-2">
+                  {post.description}
+                </p>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {t('profile.postedOn')} {formatDate(post.created_at)}
+                </div>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                {post.status === 'available' ? <Button size="sm" variant="outline" className="flex-1 sm:flex-initial text-xs sm:text-sm" onClick={() => handlePostStatusUpdate(post.id, 'taken')}>
+                  {t('profile.markTaken')}
+                </Button> : <Button size="sm" variant="outline" className="flex-1 sm:flex-initial text-xs sm:text-sm" onClick={() => handlePostStatusUpdate(post.id, 'available')}>
+                  {t('profile.markAvailable')}
+                </Button>}
+              </div>
+            </div>
+          </motion.div>)}
+        </div>}
+      </CardContent>
+    </Card>
+  </motion.div>;
 }

@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MapPin, Navigation, Plus, Loader2, CalendarIcon, Clock, Tag, AlertTriangle, ShieldCheck, UserCircle, ChevronRight } from 'lucide-react';
+import { MapPin, Navigation, Plus, Loader2, CalendarIcon, Clock, Tag, AlertTriangle, ShieldCheck, UserCircle, ChevronRight, CheckCircle2, XCircle } from 'lucide-react';
+import { scanFoodImage, type FoodScanResult } from '@/utils/foodScannerApi';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +22,7 @@ import { validateLocationName, validateCoordinates } from '@/utils/validation';
 import LocationMapPreview from '@/components/LocationMapPreview';
 import SmartImageCapture from '@/components/SmartImageCapture';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 interface ImageData {
   file: File;
@@ -32,10 +34,12 @@ export default function PostFood() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isComplete: profileComplete, isLoading: profileLoading, missingFields } = useProfileCompletion();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [smartImages, setSmartImages] = useState<ImageData[]>([]);
+  const [scanResults, setScanResults] = useState<Record<string, { result: FoodScanResult | null; error: string | null; scanning: boolean }>>({});
   const [formData, setFormData] = useState({
     food_title: '',
     description: '',
@@ -69,7 +73,7 @@ export default function PostFood() {
           .select('location')
           .eq('user_id', user.id)
           .maybeSingle();
-        
+
         if (profile?.location) {
           setFormData(prev => ({ ...prev, location_name: profile.location }));
         }
@@ -181,7 +185,7 @@ export default function PostFood() {
 
   const getCurrentLocation = () => {
     setLocationLoading(true);
-    
+
     if (!('geolocation' in navigator)) {
       setLocationLoading(false);
       toast({
@@ -196,7 +200,7 @@ export default function PostFood() {
       async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
-        
+
         setFormData(prev => ({
           ...prev,
           location_lat: lat,
@@ -221,7 +225,7 @@ export default function PostFood() {
           setFormData(prev => ({ ...prev, location_name: `${lat.toFixed(6)}, ${lng.toFixed(6)}` }));
           console.error('Error getting address:', error);
         }
-        
+
         setLocationLoading(false);
         toast({
           title: "Location obtained",
@@ -230,7 +234,7 @@ export default function PostFood() {
       },
       (error) => {
         setLocationLoading(false);
-        
+
         let errorMessage = "Unable to fetch location. Please try again.";
         switch (error.code) {
           case error.PERMISSION_DENIED:
@@ -243,7 +247,7 @@ export default function PostFood() {
             errorMessage = "Location request timed out. Please try again.";
             break;
         }
-        
+
         toast({
           title: "Location error",
           description: errorMessage,
@@ -282,24 +286,24 @@ export default function PostFood() {
     if (!formData.location_name || !formData.location_name.trim()) {
       errors.location_name = 'Pickup location is required.';
     }
-    
+
     const lat = Number(formData.location_lat);
     const lng = Number(formData.location_long);
-    
+
     if (isNaN(lat) || lat < -90 || lat > 90) {
       errors.location_lat = 'Valid latitude is required (-90 to 90).';
     }
-    
+
     if (isNaN(lng) || lng < -180 || lng > 180) {
       errors.location_long = 'Valid longitude is required (-180 to 180).';
     }
-    
+
     // Check if coordinates are likely the default (0, 0) which is invalid for food sharing
     if (lat === 0 && lng === 0) {
       errors.location_lat = 'Please use "Get Current Location" or enter valid coordinates.';
       errors.location_long = 'Please use "Get Current Location" or enter valid coordinates.';
     }
-    
+
     // Best before is required for safety
     if (!bestBefore) {
       errors.best_before = 'Best before date and time is required.';
@@ -326,7 +330,7 @@ export default function PostFood() {
 
     setLoading(true);
     setImageUploading(true);
-    
+
     try {
       // Upload images if selected, but do not block post creation if upload fails
       let imageUrls: string[] = [];
@@ -345,24 +349,24 @@ export default function PostFood() {
         }
       }
 
-    // Safety Shield is purely client-side; no safety metadata is stored in the database
+      // Safety Shield is purely client-side; no safety metadata is stored in the database
 
-    // Prepare insert payload with only existing DB columns (no safety or UI-only fields)
-    const insertPayload = {
-      food_title: formData.food_title.trim(),
-      description: formData.description.trim(),
-      location_lat: Number(formData.location_lat),
-      location_long: Number(formData.location_long),
-      location_name: formData.location_name.trim(),
-      food_category: formData.food_category.toLowerCase(),
-      cuisine_type: formData.cuisine_type ? formData.cuisine_type : null,
-      user_id: user?.id,
-      images: imageUrls.length > 0 ? imageUrls : [],
-      image_url: imageUrls.length > 0 ? imageUrls[0] : null,
-      best_before: bestBefore ? bestBefore.toISOString() : null,
-      tags: selectedTags.length > 0 ? selectedTags : [],
-      status: 'available',
-    } as const;
+      // Prepare insert payload with only existing DB columns (no safety or UI-only fields)
+      const insertPayload = {
+        food_title: formData.food_title.trim(),
+        description: formData.description.trim(),
+        location_lat: Number(formData.location_lat),
+        location_long: Number(formData.location_long),
+        location_name: formData.location_name.trim(),
+        food_category: formData.food_category.toLowerCase(),
+        cuisine_type: formData.cuisine_type ? formData.cuisine_type : null,
+        user_id: user?.id,
+        images: imageUrls.length > 0 ? imageUrls : [],
+        image_url: imageUrls.length > 0 ? imageUrls[0] : null,
+        best_before: bestBefore ? bestBefore.toISOString() : null,
+        tags: selectedTags.length > 0 ? selectedTags : [],
+        status: 'available',
+      } as const;
 
       console.log('Attempting to insert food post:', JSON.stringify(insertPayload, null, 2));
 
@@ -391,11 +395,11 @@ export default function PostFood() {
       navigate('/');
     } catch (error: any) {
       console.error('Error creating food post:', error);
-      
+
       const errorMessage = error?.message || 'Unknown error occurred';
       const errorDetails = error?.details || '';
       const errorHint = error?.hint || '';
-      
+
       toast({
         title: "Error creating post",
         description: `${errorMessage}${errorDetails ? ` - ${errorDetails}` : ''}${errorHint ? ` Hint: ${errorHint}` : ''}`,
@@ -460,7 +464,7 @@ export default function PostFood() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto space-y-6"
+      className="max-w-5xl mx-auto space-y-6"
     >
       <div className="glass-card p-6">
         <div className="text-center mb-6">
@@ -472,309 +476,406 @@ export default function PostFood() {
           >
             <Plus className="w-8 h-8 text-primary-foreground" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Share Food</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t('nav.addFood')}</h1>
           <p className="text-muted-foreground">
-            Help reduce food waste by sharing with your community
+            {t('solution.postSurplusDesc')}
           </p>
         </div>
       </div>
 
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle>Food Details</CardTitle>
+          <CardTitle>{t('postFood.foodDetails')}</CardTitle>
           <CardDescription>
-            Provide information about the food you want to share
+            {t('postFood.foodDetailsDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="food_title">Food Title *</Label>
-              <Input
-                id="food_title"
-                name="food_title"
-                type="text"
-                placeholder="e.g., Fresh vegetables, Homemade pasta, Leftover pizza"
-                value={formData.food_title}
-                onChange={handleInputChange}
-                className={validationErrors.food_title ? 'border-destructive focus:border-destructive' : ''}
-                required
-              />
-              {validationErrors.food_title && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>{validationErrors.food_title}</span>
-                </div>
-              )}
-            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                name="description"
-                placeholder="Describe the food, quantity, expiry date, any special instructions... (e.g., 'Fresh homemade lasagna, serves 4-6 people, made this morning, vegetarian')"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows={4}
-                className={validationErrors.description ? 'border-destructive focus:border-destructive' : ''}
-                required
-              />
-              {validationErrors.description && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>{validationErrors.description}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Food Category */}
-            <div className="space-y-2">
-              <Label>Food Category *</Label>
-              <Select 
-                value={formData.food_category} 
-                onValueChange={(value) => {
-                  handleSelectChange('food_category', value);
-                  // Clear validation error when user selects
-                  if (validationErrors.food_category) {
-                    setValidationErrors(prev => {
-                      const updated = { ...prev };
-                      delete updated.food_category;
-                      return updated;
-                    });
-                  }
-                }}
-              >
-                <SelectTrigger className={validationErrors.food_category ? 'border-destructive' : ''}>
-                  <SelectValue placeholder="Select food category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {foodCategories.map((category) => (
-                    <SelectItem key={category} value={category.toLowerCase().replace(/\s+/g, '_')}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {validationErrors.food_category && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>{validationErrors.food_category}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Cuisine Type */}
-            <div className="space-y-2">
-              <Label>Cuisine Type</Label>
-              <Select value={formData.cuisine_type} onValueChange={(value) => handleSelectChange('cuisine_type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select cuisine type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cuisineTypes.map((cuisine) => (
-                    <SelectItem key={cuisine} value={cuisine.toLowerCase().replace(/\s+/g, '_')}>
-                      {cuisine}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Pickup Location */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                <Label htmlFor="location_name">Pickup Location *</Label>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div className="flex-1 space-y-1">
+              {/* ───── LEFT COLUMN: Food Details ───── */}
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="food_title">{t('postFood.foodTitle')} *</Label>
                   <Input
-                    id="location_name"
-                    name="location_name"
+                    id="food_title"
+                    name="food_title"
                     type="text"
-                    placeholder="Enter pickup address or landmark"
-                    value={formData.location_name}
+                    placeholder="e.g., Fresh vegetables, Homemade pasta, Leftover pizza"
+                    value={formData.food_title}
                     onChange={handleInputChange}
-                    className={validationErrors.location_name ? 'border-destructive focus:border-destructive' : ''}
+                    className={validationErrors.food_title ? 'border-destructive focus:border-destructive' : ''}
                     required
                   />
-                  {!isNaN(formData.location_lat) && !isNaN(formData.location_long) && (
-                    <p className="text-xs text-muted-foreground">
-                      Coordinates: {formData.location_lat.toFixed(5)}, {formData.location_long.toFixed(5)}
-                    </p>
-                  )}
-                  {validationErrors.location_name && (
+                  {validationErrors.food_title && (
                     <div className="flex items-center gap-2 text-sm text-destructive">
                       <AlertTriangle className="w-4 h-4" />
-                      <span>{validationErrors.location_name}</span>
+                      <span>{validationErrors.food_title}</span>
                     </div>
                   )}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full sm:w-auto inline-flex items-center justify-center"
-                  onClick={getCurrentLocation}
-                  disabled={locationLoading}
-                >
-                  {locationLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Locating...
-                    </>
-                  ) : (
-                    <>
-                      <Navigation className="mr-2 h-4 w-4" />
-                      Use Current Location
-                    </>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">{t('postFood.description')} *</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    placeholder="Describe the food, quantity, expiry date, any special instructions... (e.g., 'Fresh homemade lasagna, serves 4-6 people, made this morning, vegetarian')"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={4}
+                    className={validationErrors.description ? 'border-destructive focus:border-destructive' : ''}
+                    required
+                  />
+                  {validationErrors.description && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>{validationErrors.description}</span>
+                    </div>
                   )}
-                </Button>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label htmlFor="location_lat" className="text-xs text-muted-foreground">
-                    Latitude
-                  </Label>
-                  <Input
-                    id="location_lat"
-                    type="number"
-                    step="0.00001"
-                    value={Number.isNaN(formData.location_lat) ? '' : formData.location_lat}
-                    onChange={(e) => handleCoordinateChange('location_lat', e.target.value)}
-                  />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="location_long" className="text-xs text-muted-foreground">
-                    Longitude
-                  </Label>
-                  <Input
-                    id="location_long"
-                    type="number"
-                    step="0.00001"
-                    value={Number.isNaN(formData.location_long) ? '' : formData.location_long}
-                    onChange={(e) => handleCoordinateChange('location_long', e.target.value)}
-                  />
-                </div>
-              </div>
-              {(validationErrors.location_lat || validationErrors.location_long) && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>{validationErrors.location_lat || validationErrors.location_long}</span>
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Use your current location or enter a detailed pickup address. Coordinates are stored for precise matching.
-              </p>
-            </div>
 
-            {/* Location Map Preview - Google Maps */}
-            {!isNaN(formData.location_lat) && !isNaN(formData.location_long) && (
-              <LocationMapPreview
-                latitude={formData.location_lat}
-                longitude={formData.location_long}
-                locationName={formData.location_name}
-              />
-            )}
-
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label>Tags</Label>
-              <div className="flex flex-wrap gap-2">
-                {availableTags.map((tag) => (
-                  <Button
-                    key={tag}
-                    type="button"
-                    variant={selectedTags.includes(tag) ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => toggleTag(tag)}
-                    className="text-xs"
+                {/* Food Category */}
+                <div className="space-y-2">
+                  <Label>{t('postFood.foodCategory')} *</Label>
+                  <Select
+                    value={formData.food_category}
+                    onValueChange={(value) => {
+                      handleSelectChange('food_category', value);
+                      // Clear validation error when user selects
+                      if (validationErrors.food_category) {
+                        setValidationErrors(prev => {
+                          const updated = { ...prev };
+                          delete updated.food_category;
+                          return updated;
+                        });
+                      }
+                    }}
                   >
-                    <Tag className="w-3 h-3 mr-1" />
-                    {tag}
-                  </Button>
-                ))}
+                    <SelectTrigger className={validationErrors.food_category ? 'border-destructive' : ''}>
+                      <SelectValue placeholder={t('postFood.selectCategory')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {foodCategories.map((category) => (
+                        <SelectItem key={category} value={category.toLowerCase().replace(/\s+/g, '_')}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {validationErrors.food_category && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>{validationErrors.food_category}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Cuisine Type */}
+                <div className="space-y-2">
+                  <Label>{t('postFood.cuisineType')}</Label>
+                  <Select value={formData.cuisine_type} onValueChange={(value) => handleSelectChange('cuisine_type', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('postFood.selectCuisine')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cuisineTypes.map((cuisine) => (
+                        <SelectItem key={cuisine} value={cuisine.toLowerCase().replace(/\s+/g, '_')}>
+                          {cuisine}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Pickup Location */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <Label htmlFor="location_name">{t('postFood.pickupLocation')} *</Label>
+                  </div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="flex-1 space-y-1">
+                      <Input
+                        id="location_name"
+                        name="location_name"
+                        type="text"
+                        placeholder="Enter pickup address or landmark"
+                        value={formData.location_name}
+                        onChange={handleInputChange}
+                        className={validationErrors.location_name ? 'border-destructive focus:border-destructive' : ''}
+                        required
+                      />
+                      {!isNaN(formData.location_lat) && !isNaN(formData.location_long) && (
+                        <p className="text-xs text-muted-foreground">
+                          Coordinates: {formData.location_lat.toFixed(5)}, {formData.location_long.toFixed(5)}
+                        </p>
+                      )}
+                      {validationErrors.location_name && (
+                        <div className="flex items-center gap-2 text-sm text-destructive">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>{validationErrors.location_name}</span>
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full sm:w-auto inline-flex items-center justify-center"
+                      onClick={getCurrentLocation}
+                      disabled={locationLoading}
+                    >
+                      {locationLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Locating...
+                        </>
+                      ) : (
+                        <>
+                          <Navigation className="mr-2 h-4 w-4" />
+                          {t('postFood.useCurrentLocation')}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="location_lat" className="text-xs text-muted-foreground">
+                        {t('postFood.latitude')}
+                      </Label>
+                      <Input
+                        id="location_lat"
+                        type="number"
+                        step="0.00001"
+                        value={Number.isNaN(formData.location_lat) ? '' : formData.location_lat}
+                        onChange={(e) => handleCoordinateChange('location_lat', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="location_long" className="text-xs text-muted-foreground">
+                        {t('postFood.longitude')}
+                      </Label>
+                      <Input
+                        id="location_long"
+                        type="number"
+                        step="0.00001"
+                        value={Number.isNaN(formData.location_long) ? '' : formData.location_long}
+                        onChange={(e) => handleCoordinateChange('location_long', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  {(validationErrors.location_lat || validationErrors.location_long) && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>{validationErrors.location_lat || validationErrors.location_long}</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Use your current location or enter a detailed pickup address. Coordinates are stored for precise matching.
+                  </p>
+                </div>
+
+                {/* Location Map Preview - Google Maps */}
+                {!isNaN(formData.location_lat) && !isNaN(formData.location_long) && (
+                  <LocationMapPreview
+                    latitude={formData.location_lat}
+                    longitude={formData.location_long}
+                    locationName={formData.location_name}
+                  />
+                )}
+
+                {/* Tags */}
+                <div className="space-y-2">
+                  <Label>{t('postFood.tags')}</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableTags.map((tag) => (
+                      <Button
+                        key={tag}
+                        type="button"
+                        variant={selectedTags.includes(tag) ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => toggleTag(tag)}
+                        className="text-xs"
+                      >
+                        <Tag className="w-3 h-3 mr-1" />
+                        {tag}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('postFood.tagsDesc')}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Select tags that describe your food
-              </p>
-            </div>
 
-            {/* Image Upload - Smart Capture */}
-            <div className="space-y-4">
-              <Label>Food Images (Up to 3 images)</Label>
-              <SmartImageCapture
-                images={smartImages}
-                onImagesChange={setSmartImages}
-                maxImages={3}
-                maxSizeMB={5}
-                maxResolution={1920}
-              />
-            </div>
+              {/* ───── RIGHT COLUMN: Images, AI Scan, Timing, Safety ───── */}
+              <div className="space-y-6">
 
-
-            {/* Best Before Date Time */}
-            <div className="space-y-2">
-              <Label>Food is best before... *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !bestBefore && "text-muted-foreground",
-                      validationErrors.best_before && "border-destructive"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {bestBefore ? (
-                      format(bestBefore, "PPP 'at' p")
-                    ) : (
-                      <span>Select date and time</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={bestBefore}
-                    onSelect={(date) => {
-                      if (date) {
-                        const now = new Date();
-                        const newDate = new Date(date);
-                        if (!bestBefore) {
-                          newDate.setHours(now.getHours(), now.getMinutes());
-                        } else {
-                          newDate.setHours(bestBefore.getHours(), bestBefore.getMinutes());
+                {/* Image Upload - Smart Capture with AI Safety Scan */}
+                <div className="space-y-4">
+                  <Label>{t('postFood.foodImages')}</Label>
+                  <SmartImageCapture
+                    images={smartImages}
+                    onImagesChange={(imgs) => {
+                      setSmartImages(imgs);
+                      // Clean up scan results for removed images
+                      const currentPreviews = new Set(imgs.map(i => i.preview));
+                      setScanResults(prev => {
+                        const cleaned: typeof prev = {};
+                        for (const key of Object.keys(prev)) {
+                          if (currentPreviews.has(key)) cleaned[key] = prev[key];
                         }
-                        setBestBefore(newDate);
-                        if (validationErrors.best_before) {
-                          setValidationErrors((prev) => {
-                            const updated = { ...prev };
-                            delete updated.best_before;
-                            return updated;
-                          });
+                        return cleaned;
+                      });
+                    }}
+                    onImageAdded={async (newImages) => {
+                      // Auto-scan each newly added image
+                      for (const img of newImages) {
+                        const key = img.preview;
+                        setScanResults(prev => ({ ...prev, [key]: { result: null, error: null, scanning: true } }));
+                        try {
+                          const result = await scanFoodImage(img.file);
+                          setScanResults(prev => ({ ...prev, [key]: { result, error: null, scanning: false } }));
+                        } catch (err: any) {
+                          setScanResults(prev => ({ ...prev, [key]: { result: null, error: err.message || 'Scan failed', scanning: false } }));
                         }
                       }
                     }}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
+                    maxImages={3}
+                    maxSizeMB={5}
+                    maxResolution={1920}
                   />
-                  {bestBefore && (
-                    <div className="p-3 border-t">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        <Label htmlFor="time">Time:</Label>
-                        <Input
-                          id="time"
-                          type="time"
-                          value={format(bestBefore, "HH:mm")}
-                          onChange={(e) => {
-                            const [hours, minutes] = e.target.value.split(":");
-                            const newDate = new Date(bestBefore);
-                            newDate.setHours(parseInt(hours), parseInt(minutes));
+
+                  {/* Inline AI Scan Results */}
+                  <AnimatePresence>
+                    {smartImages.map((img) => {
+                      const scan = scanResults[img.preview];
+                      if (!scan) return null;
+
+                      const riskStyles: Record<string, { icon: React.ReactNode; color: string; bg: string; border: string; label: string }> = {
+                        LOW: { icon: <CheckCircle2 className="w-4 h-4" />, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/25', label: 'Low Risk' },
+                        MEDIUM: { icon: <AlertTriangle className="w-4 h-4" />, color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/25', label: 'Medium Risk' },
+                        HIGH: { icon: <XCircle className="w-4 h-4" />, color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/25', label: 'High Risk' },
+                      };
+
+                      const risk = scan.result ? riskStyles[scan.result.risk_level] : null;
+
+                      return (
+                        <motion.div
+                          key={img.preview}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          className="border rounded-xl overflow-hidden bg-card/50"
+                        >
+                          <div className="flex flex-col sm:flex-row">
+                            {/* Thumbnail */}
+                            <div className="sm:w-28 sm:min-h-[100px] bg-muted/30 flex-shrink-0">
+                              <img src={img.preview} alt={img.file.name} className="w-full h-28 sm:h-full object-cover" />
+                            </div>
+
+                            {/* Scan content */}
+                            <div className="flex-1 p-3 sm:p-4 space-y-2">
+                              {/* Scanning */}
+                              {scan.scanning && (
+                                <div className="flex items-center gap-2 py-2">
+                                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                                  <span className="text-sm text-muted-foreground">AI scanning for safety...</span>
+                                </div>
+                              )}
+
+                              {/* Error */}
+                              {scan.error && (
+                                <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/25">
+                                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                                  <span className="text-xs text-red-400">{scan.error}</span>
+                                </div>
+                              )}
+
+                              {/* Result */}
+                              {scan.result && risk && (
+                                <>
+                                  <div className="flex items-center flex-wrap gap-2">
+                                    <Badge className={`${risk.bg} ${risk.color} ${risk.border} border gap-1 px-2 py-0.5 text-xs`}>
+                                      {risk.icon}
+                                      {risk.label}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">Confidence: {scan.result.confidence}</span>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                    <div>
+                                      <span className="text-muted-foreground">🍽️ Food:</span>{' '}
+                                      <span className="font-medium text-foreground">{scan.result.food_identified}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">📅 Expiry:</span>{' '}
+                                      <span className="font-medium text-foreground">
+                                        {scan.result.expiry_date_visible === 'Yes' ? scan.result.detected_expiry_text : 'Not visible'}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {scan.result.visible_issues.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {scan.result.visible_issues.map((issue, i) => (
+                                        <Badge key={i} variant="outline" className={`${risk.bg} ${risk.color} ${risk.border} border text-[10px] px-1.5 py-0`}>
+                                          {issue}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  <div className={`p-2 rounded-lg ${risk.bg} border-l-4 ${risk.border} text-xs text-foreground/80`}>
+                                    {scan.result.user_message}
+                                  </div>
+
+                                </>)}
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+
+
+                {/* Best Before Date Time */}
+                <div className="space-y-2">
+                  <Label>Food is best before... *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !bestBefore && "text-muted-foreground",
+                          validationErrors.best_before && "border-destructive"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {bestBefore ? (
+                          format(bestBefore, "PPP 'at' p")
+                        ) : (
+                          <span>Select date and time</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={bestBefore}
+                        onSelect={(date) => {
+                          if (date) {
+                            const now = new Date();
+                            const newDate = new Date(date);
+                            if (!bestBefore) {
+                              newDate.setHours(now.getHours(), now.getMinutes());
+                            } else {
+                              newDate.setHours(bestBefore.getHours(), bestBefore.getMinutes());
+                            }
                             setBestBefore(newDate);
                             if (validationErrors.best_before) {
                               setValidationErrors((prev) => {
@@ -783,290 +884,392 @@ export default function PostFood() {
                                 return updated;
                               });
                             }
-                          }}
-                          className="w-auto"
-                        />
-                      </div>
+                          }
+                        }}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                      {bestBefore && (
+                        <div className="p-3 border-t">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            <Label htmlFor="time">Time:</Label>
+                            <Input
+                              id="time"
+                              type="time"
+                              value={format(bestBefore, "HH:mm")}
+                              onChange={(e) => {
+                                const [hours, minutes] = e.target.value.split(":");
+                                const newDate = new Date(bestBefore);
+                                newDate.setHours(parseInt(hours), parseInt(minutes));
+                                setBestBefore(newDate);
+                                if (validationErrors.best_before) {
+                                  setValidationErrors((prev) => {
+                                    const updated = { ...prev };
+                                    delete updated.best_before;
+                                    return updated;
+                                  });
+                                }
+                              }}
+                              className="w-auto"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                  {validationErrors.best_before && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>{validationErrors.best_before}</span>
                     </div>
                   )}
-                </PopoverContent>
-              </Popover>
-              {validationErrors.best_before && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>{validationErrors.best_before}</span>
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                When is this food best consumed by?
-              </p>
-            </div>
-
-            {/* Safety Shield System - new implementation */}
-            <div className="mt-6 space-y-4 rounded-xl border bg-background/60 p-4 shadow-sm">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-success" />
-                    <h3 className="text-sm font-semibold leading-none">Safety Shield Checklist *</h3>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Answer these quick safety questions to help receivers understand how this food was handled.
+                  <p className="text-xs text-muted-foreground">
+                    When is this food best consumed by?
                   </p>
                 </div>
-              </div>
 
-              {(validationErrors.safety_checklist || validationErrors.safety_confirmation) && (
-                <div className="mt-2 flex flex-col gap-1 text-xs text-destructive">
-                  {validationErrors.safety_checklist && (
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      <span>{validationErrors.safety_checklist}</span>
+                {/* Safety Shield System - new implementation */}
+                <div className="mt-6 space-y-4 rounded-xl border bg-background/60 p-4 shadow-sm">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-5 w-5 text-success" />
+                        <h3 className="text-sm font-semibold leading-none">Safety Shield Checklist *</h3>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Answer these quick safety questions to help receivers understand how this food was handled.
+                      </p>
+                    </div>
+                  </div>
+
+                  {(validationErrors.safety_checklist || validationErrors.safety_confirmation) && (
+                    <div className="mt-2 flex flex-col gap-1 text-xs text-destructive">
+                      {validationErrors.safety_checklist && (
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>{validationErrors.safety_checklist}</span>
+                        </div>
+                      )}
+                      {validationErrors.safety_confirmation && (
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>{validationErrors.safety_confirmation}</span>
+                        </div>
+                      )}
                     </div>
                   )}
-                  {validationErrors.safety_confirmation && (
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      <span>{validationErrors.safety_confirmation}</span>
+
+                  <div className="mt-3 space-y-4">
+                    {/* Covered during storage */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium">
+                          Was the food covered/protected during storage?
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={safetyChecklist.coveredDuringStorage === true ? 'default' : 'outline'}
+                            onClick={() => {
+                              setSafetyChecklist((prev) => ({ ...prev, coveredDuringStorage: true }));
+                              if (validationErrors.safety_checklist) {
+                                setValidationErrors((prev) => {
+                                  const updated = { ...prev };
+                                  delete updated.safety_checklist;
+                                  return updated;
+                                });
+                              }
+                            }}
+                            className="px-3 text-xs"
+                          >
+                            Yes
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={safetyChecklist.coveredDuringStorage === false ? 'destructive' : 'outline'}
+                            onClick={() => {
+                              setSafetyChecklist((prev) => ({ ...prev, coveredDuringStorage: false }));
+                              if (validationErrors.safety_checklist) {
+                                setValidationErrors((prev) => {
+                                  const updated = { ...prev };
+                                  delete updated.safety_checklist;
+                                  return updated;
+                                });
+                              }
+                            }}
+                            className="px-3 text-xs"
+                          >
+                            No
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Proper storage */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium">
+                          Was the food stored in proper conditions (e.g. refrigerated if needed)?
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={safetyChecklist.storedProperly === true ? 'default' : 'outline'}
+                            onClick={() => {
+                              setSafetyChecklist((prev) => ({ ...prev, storedProperly: true }));
+                              if (validationErrors.safety_checklist) {
+                                setValidationErrors((prev) => {
+                                  const updated = { ...prev };
+                                  delete updated.safety_checklist;
+                                  return updated;
+                                });
+                              }
+                            }}
+                            className="px-3 text-xs"
+                          >
+                            Yes
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={safetyChecklist.storedProperly === false ? 'destructive' : 'outline'}
+                            onClick={() => {
+                              setSafetyChecklist((prev) => ({ ...prev, storedProperly: false }));
+                              if (validationErrors.safety_checklist) {
+                                setValidationErrors((prev) => {
+                                  const updated = { ...prev };
+                                  delete updated.safety_checklist;
+                                  return updated;
+                                });
+                              }
+                            }}
+                            className="px-3 text-xs"
+                          >
+                            No
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Prepared recently */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium">
+                          Was this food prepared today or yesterday?
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={safetyChecklist.preparedRecently === true ? 'default' : 'outline'}
+                            onClick={() => {
+                              setSafetyChecklist((prev) => ({ ...prev, preparedRecently: true }));
+                              if (validationErrors.safety_checklist) {
+                                setValidationErrors((prev) => {
+                                  const updated = { ...prev };
+                                  delete updated.safety_checklist;
+                                  return updated;
+                                });
+                              }
+                            }}
+                            className="px-3 text-xs"
+                          >
+                            Yes
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={safetyChecklist.preparedRecently === false ? 'destructive' : 'outline'}
+                            onClick={() => {
+                              setSafetyChecklist((prev) => ({ ...prev, preparedRecently: false }));
+                              if (validationErrors.safety_checklist) {
+                                setValidationErrors((prev) => {
+                                  const updated = { ...prev };
+                                  delete updated.safety_checklist;
+                                  return updated;
+                                });
+                              }
+                            }}
+                            className="px-3 text-xs"
+                          >
+                            No
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Packed safely */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium">
+                          Is the food properly packed/sealed for safe transport?
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={safetyChecklist.packedSafely === true ? 'default' : 'outline'}
+                            onClick={() => {
+                              setSafetyChecklist((prev) => ({ ...prev, packedSafely: true }));
+                              if (validationErrors.safety_checklist) {
+                                setValidationErrors((prev) => {
+                                  const updated = { ...prev };
+                                  delete updated.safety_checklist;
+                                  return updated;
+                                });
+                              }
+                            }}
+                            className="px-3 text-xs"
+                          >
+                            Yes
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={safetyChecklist.packedSafely === false ? 'destructive' : 'outline'}
+                            onClick={() => {
+                              setSafetyChecklist((prev) => ({ ...prev, packedSafely: false }));
+                              if (validationErrors.safety_checklist) {
+                                setValidationErrors((prev) => {
+                                  const updated = { ...prev };
+                                  delete updated.safety_checklist;
+                                  return updated;
+                                });
+                              }
+                            }}
+                            className="px-3 text-xs"
+                          >
+                            No
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Final confirmation */}
+                    <div className="mt-4 flex items-start gap-2 rounded-md bg-muted/40 p-3">
+                      <Input
+                        id="safety_confirmation"
+                        type="checkbox"
+                        checked={safetyConfirmation}
+                        onChange={(e) => {
+                          setSafetyConfirmation(e.target.checked);
+                          if (validationErrors.safety_confirmation) {
+                            setValidationErrors((prev) => {
+                              const updated = { ...prev };
+                              delete updated.safety_confirmation;
+                              return updated;
+                            });
+                          }
+                        }}
+                        className="mt-1 h-4 w-4"
+                      />
+                      <Label htmlFor="safety_confirmation" className="text-xs leading-snug">
+                        I confirm that, to the best of my knowledge, this food has been handled safely and I would be
+                        comfortable eating it myself.
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>{/* end grid */}
+
+            {/* AI Safety Gate Warning */}
+            {(() => {
+              const scanValues = Object.values(scanResults);
+              const anyScanning = scanValues.some(s => s.scanning);
+              const hasHighRisk = scanValues.some(s => s.result?.risk_level === 'HIGH');
+              const hasMediumRisk = scanValues.some(s => s.result?.risk_level === 'MEDIUM');
+              const allScansComplete = smartImages.length > 0 && smartImages.every(img => {
+                const scan = scanResults[img.preview];
+                return scan && !scan.scanning;
+              });
+
+              return (
+                <>
+                  {hasHighRisk && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/25"
+                    >
+                      <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-red-500">Food Safety Warning</p>
+                        <p className="text-xs text-red-400 mt-1">
+                          AI detected visible spoilage or safety concerns in one or more images.
+                          Please do not share food that may be unsafe for consumption.
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {!hasHighRisk && hasMediumRisk && allScansComplete && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25"
+                    >
+                      <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          AI flagged minor concerns. Please ensure this food is safe before sharing.
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {anyScanning && (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <span className="text-xs text-muted-foreground">AI is analyzing your food images for safety...</span>
                     </div>
                   )}
-                </div>
-              )}
 
-              <div className="mt-3 space-y-4">
-                {/* Covered during storage */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium">
-                      Was the food covered/protected during storage?
-                    </span>
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={safetyChecklist.coveredDuringStorage === true ? 'default' : 'outline'}
-                        onClick={() => {
-                          setSafetyChecklist((prev) => ({ ...prev, coveredDuringStorage: true }));
-                          if (validationErrors.safety_checklist) {
-                            setValidationErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.safety_checklist;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className="px-3 text-xs"
-                      >
-                        Yes
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={safetyChecklist.coveredDuringStorage === false ? 'destructive' : 'outline'}
-                        onClick={() => {
-                          setSafetyChecklist((prev) => ({ ...prev, coveredDuringStorage: false }));
-                          if (validationErrors.safety_checklist) {
-                            setValidationErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.safety_checklist;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className="px-3 text-xs"
-                      >
-                        No
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Proper storage */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium">
-                      Was the food stored in proper conditions (e.g. refrigerated if needed)?
-                    </span>
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={safetyChecklist.storedProperly === true ? 'default' : 'outline'}
-                        onClick={() => {
-                          setSafetyChecklist((prev) => ({ ...prev, storedProperly: true }));
-                          if (validationErrors.safety_checklist) {
-                            setValidationErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.safety_checklist;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className="px-3 text-xs"
-                      >
-                        Yes
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={safetyChecklist.storedProperly === false ? 'destructive' : 'outline'}
-                        onClick={() => {
-                          setSafetyChecklist((prev) => ({ ...prev, storedProperly: false }));
-                          if (validationErrors.safety_checklist) {
-                            setValidationErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.safety_checklist;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className="px-3 text-xs"
-                      >
-                        No
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Prepared recently */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium">
-                      Was this food prepared today or yesterday?
-                    </span>
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={safetyChecklist.preparedRecently === true ? 'default' : 'outline'}
-                        onClick={() => {
-                          setSafetyChecklist((prev) => ({ ...prev, preparedRecently: true }));
-                          if (validationErrors.safety_checklist) {
-                            setValidationErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.safety_checklist;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className="px-3 text-xs"
-                      >
-                        Yes
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={safetyChecklist.preparedRecently === false ? 'destructive' : 'outline'}
-                        onClick={() => {
-                          setSafetyChecklist((prev) => ({ ...prev, preparedRecently: false }));
-                          if (validationErrors.safety_checklist) {
-                            setValidationErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.safety_checklist;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className="px-3 text-xs"
-                      >
-                        No
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Packed safely */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium">
-                      Is the food properly packed/sealed for safe transport?
-                    </span>
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={safetyChecklist.packedSafely === true ? 'default' : 'outline'}
-                        onClick={() => {
-                          setSafetyChecklist((prev) => ({ ...prev, packedSafely: true }));
-                          if (validationErrors.safety_checklist) {
-                            setValidationErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.safety_checklist;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className="px-3 text-xs"
-                      >
-                        Yes
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={safetyChecklist.packedSafely === false ? 'destructive' : 'outline'}
-                        onClick={() => {
-                          setSafetyChecklist((prev) => ({ ...prev, packedSafely: false }));
-                          if (validationErrors.safety_checklist) {
-                            setValidationErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.safety_checklist;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className="px-3 text-xs"
-                      >
-                        No
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Final confirmation */}
-                <div className="mt-4 flex items-start gap-2 rounded-md bg-muted/40 p-3">
-                  <Input
-                    id="safety_confirmation"
-                    type="checkbox"
-                    checked={safetyConfirmation}
-                    onChange={(e) => {
-                      setSafetyConfirmation(e.target.checked);
-                      if (validationErrors.safety_confirmation) {
-                        setValidationErrors((prev) => {
-                          const updated = { ...prev };
-                          delete updated.safety_confirmation;
-                          return updated;
-                        });
-                      }
-                    }}
-                    className="mt-1 h-4 w-4"
-                  />
-                  <Label htmlFor="safety_confirmation" className="text-xs leading-snug">
-                    I confirm that, to the best of my knowledge, this food has been handled safely and I would be
-                    comfortable eating it myself.
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            {/* Share button is controlled by Safety Shield completeness and loading state */}
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={!Object.values(safetyChecklist).every((value) => value === true) || !safetyConfirmation || loading || imageUploading}
-            >
-
-              {loading || imageUploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {imageUploading ? 'Uploading image...' : 'Creating post...'}
+                  {/* Share button - disabled if HIGH risk, scanning, or safety incomplete */}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    size="lg"
+                    disabled={
+                      hasHighRisk ||
+                      anyScanning ||
+                      !Object.values(safetyChecklist).every((value) => value === true) ||
+                      !safetyConfirmation ||
+                      loading ||
+                      imageUploading
+                    }
+                  >
+                    {loading || imageUploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {imageUploading ? 'Uploading image...' : 'Creating post...'}
+                      </>
+                    ) : hasHighRisk ? (
+                      <>
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Sharing Blocked — Unsafe Food Detected
+                      </>
+                    ) : anyScanning ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Waiting for Safety Scan...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Share Food
+                      </>
+                    )}
+                  </Button>
                 </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Share Food
-                </>
-              )}
-            </Button>
+              );
+            })()}
           </form>
         </CardContent>
       </Card>

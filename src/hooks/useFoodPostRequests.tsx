@@ -53,10 +53,10 @@ export function useFoodPostRequests() {
       setLoading(false);
       return;
     }
-    
+
     try {
       setLoading(true);
-      
+
       // First get user's post IDs
       const { data: userPosts, error: postsError } = await supabase
         .from('food_posts')
@@ -64,7 +64,7 @@ export function useFoodPostRequests() {
         .eq('user_id', user.id);
 
       if (postsError) throw postsError;
-      
+
       if (!userPosts || userPosts.length === 0) {
         setRequests([]);
         setLoading(false);
@@ -78,7 +78,7 @@ export function useFoodPostRequests() {
         .from('food_post_requests')
         .select('*')
         .in('post_id', postIds)
-        .in('status', ['pending', 'accepted', 'declined'])
+        .in('status', ['pending', 'accepted', 'declined', 'completed'])
         .order('created_at', { ascending: false });
 
       if (requestsError) throw requestsError;
@@ -117,15 +117,15 @@ export function useFoodPostRequests() {
         return acc;
       }, {} as Record<string, any>);
 
-      // For incoming requests, include declined ones for deletion but filter out collected posts for active requests
+      // For incoming requests: keep declined for cleanup, keep completed to show collected status
       const filteredRequests = requestsData.filter(request => {
         const post = foodPostsMap[request.post_id];
-        // Keep declined requests regardless of post status (for cleanup)
         if (request.status === 'declined') return true;
+        if (request.status === 'completed') return true;
         // For pending/accepted, filter out collected posts
         return post && post.status !== 'collected';
       });
-      
+
       const requestsWithData = filteredRequests.map(request => ({
         ...request,
         status: request.status as 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled',
@@ -365,7 +365,7 @@ export function useFoodPostRequests() {
       if (error) throw error;
 
       // Update local state immediately
-      setRequests(prev => prev.map(r => 
+      setRequests(prev => prev.map(r =>
         r.id === requestId ? { ...r, status: 'declined' as const } : r
       ));
 

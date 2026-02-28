@@ -57,7 +57,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { createRequest } = useFoodPostRequests();
   const [currentView, setCurrentView] = useState<ViewType>('grid');
-  
+
   const [selectedPost, setSelectedPost] = useState<FoodPost | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -103,7 +103,7 @@ export default function Dashboard() {
     }, () => {
       fetchUserRequests();
     }).subscribe();
-    
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -159,14 +159,14 @@ export default function Dashboard() {
 
   const checkUserPosts = async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('food_posts')
         .select('id')
         .eq('user_id', user.id)
         .limit(1);
-      
+
       if (error) throw error;
       setUserHasPosts((data || []).length > 0);
     } catch (error) {
@@ -198,7 +198,7 @@ export default function Dashboard() {
   const fetchFoodPosts = async () => {
     try {
       const now = new Date().toISOString();
-      
+
       // Fetch food posts that are available and not expired
       const {
         data: posts,
@@ -239,7 +239,7 @@ export default function Dashboard() {
         ...post,
         profiles: profilesMap[post.user_id] || null
       }));
-      
+
       const postsWithDistance = postsWithProfiles.map(post => ({
         ...post,
         distance: userLocation ? calculateDistance(userLocation.lat, userLocation.lng, post.location_lat, post.location_long) : undefined
@@ -249,23 +249,23 @@ export default function Dashboard() {
       const sortedPosts = postsWithDistance.sort((a, b) => {
         const expiryA = getExpiryInfo(a.best_before);
         const expiryB = getExpiryInfo(b.best_before);
-        
+
         // Prioritize soon-expiring posts (critical < warning < safe)
         const urgencyOrder = { critical: 0, warning: 1, safe: 2, expired: 3 };
         const urgencyDiff = urgencyOrder[expiryA.urgency] - urgencyOrder[expiryB.urgency];
-        
+
         if (urgencyDiff !== 0) return urgencyDiff;
-        
+
         // Within same urgency, sort by hours left (ascending)
         if (expiryA.hoursLeft !== expiryB.hoursLeft) {
           return expiryA.hoursLeft - expiryB.hoursLeft;
         }
-        
+
         // Then by distance if available
         if (userLocation && a.distance !== undefined && b.distance !== undefined) {
           return a.distance - b.distance;
         }
-        
+
         // Finally by creation date
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
@@ -321,7 +321,7 @@ export default function Dashboard() {
 
     try {
       const result = await createRequest(postId);
-      
+
       if (!result.error) {
         // Update local state immediately for instant feedback
         setUserRequests(prev => ({
@@ -342,210 +342,210 @@ export default function Dashboard() {
     const now = new Date();
     const postDate = new Date(dateString);
     const diffInHours = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60 * 60));
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    return `${Math.floor(diffInHours / 24)}d ago`;
+    if (diffInHours < 1) return t('time.justNow');
+    if (diffInHours < 24) return `${diffInHours} ${t('time.hoursAgo')}`;
+    return `${Math.floor(diffInHours / 24)} ${t('time.daysAgo')}`;
   };
   return <motion.div initial={{
     opacity: 0
   }} animate={{
     opacity: 1
   }} className="space-y-6">
-      {/* Profile Completion Banner */}
-      <ProfileCompletionBanner />
+    {/* Profile Completion Banner */}
+    <ProfileCompletionBanner />
 
-      {/* Header */}
-      <div className="glass-card p-4 sm:p-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Food Near You</h1>
-              <p className="text-sm sm:text-base text-muted-foreground">Discover available food in your community</p>
-            </div>
-            
-            <div className="flex items-center">
-              <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
-            </div>
+    {/* Header */}
+    <div className="glass-card p-4 sm:p-6">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t('dashboard.title')}</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">{t('dashboard.subtitle')}</p>
+          </div>
+
+          <div className="flex items-center">
+            <ViewSwitcher currentView={currentView} onViewChange={setCurrentView} />
           </div>
         </div>
+      </div>
 
-        {/* Search and Filters */}
-        <div className="mt-4 space-y-3 sm:space-y-4">
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search food, location..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 text-sm sm:text-base" />
+      {/* Search and Filters */}
+      <div className="mt-4 space-y-3 sm:space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+          <Input placeholder={t('dashboard.searchPlaceholder')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 text-sm sm:text-base" />
+        </div>
+
+        {/* Filter Controls */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium">{t('dashboard.filters')}:</span>
           </div>
 
-          {/* Filter Controls */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Filters:</span>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full sm:w-36">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {foodCategories.map(category => <SelectItem key={category} value={category.toLowerCase().replace(/\s+/g, '_')}>
-                      {category}
-                    </SelectItem>)}
-                </SelectContent>
-              </Select>
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:w-36">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {foodCategories.map(category => <SelectItem key={category} value={category.toLowerCase().replace(/\s+/g, '_')}>
+                  {category}
+                </SelectItem>)}
+              </SelectContent>
+            </Select>
 
-              <Select value={selectedCuisine} onValueChange={setSelectedCuisine}>
-                <SelectTrigger className="w-full sm:w-36">
-                  <SelectValue placeholder="Cuisine" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Cuisines</SelectItem>
-                  {cuisineTypes.map(cuisine => <SelectItem key={cuisine} value={cuisine.toLowerCase().replace(/\s+/g, '_')}>
-                      {cuisine}
-                    </SelectItem>)}
-                </SelectContent>
-              </Select>
+            <Select value={selectedCuisine} onValueChange={setSelectedCuisine}>
+              <SelectTrigger className="w-full sm:w-36">
+                <SelectValue placeholder="Cuisine" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cuisines</SelectItem>
+                {cuisineTypes.map(cuisine => <SelectItem key={cuisine} value={cuisine.toLowerCase().replace(/\s+/g, '_')}>
+                  {cuisine}
+                </SelectItem>)}
+              </SelectContent>
+            </Select>
 
-              <Select value={selectedTag} onValueChange={setSelectedTag}>
-                <SelectTrigger className="w-full sm:w-28">
-                  <SelectValue placeholder="Tags" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Tags</SelectItem>
-                  {availableTags.map(tag => <SelectItem key={tag} value={tag}>
-                      {tag}
-                    </SelectItem>)}
-                </SelectContent>
-              </Select>
+            <Select value={selectedTag} onValueChange={setSelectedTag}>
+              <SelectTrigger className="w-full sm:w-28">
+                <SelectValue placeholder="Tags" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tags</SelectItem>
+                {availableTags.map(tag => <SelectItem key={tag} value={tag}>
+                  {tag}
+                </SelectItem>)}
+              </SelectContent>
+            </Select>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full sm:w-32">
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">
-                    <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-2" />
-                      Newest
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="nearest">
-                    <div className="flex items-center">
-                      <Navigation className="w-4 h-4 mr-2" />
-                      Nearest
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-32">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">
+                  <div className="flex items-center">
+                    <Clock className="w-4 h-4 mr-2" />
+                    Newest
+                  </div>
+                </SelectItem>
+                <SelectItem value="nearest">
+                  <div className="flex items-center">
+                    <Navigation className="w-4 h-4 mr-2" />
+                    Nearest
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Clear Filters Button */}
-            {(selectedCategory && selectedCategory !== 'all' || selectedCuisine && selectedCuisine !== 'all' || selectedTag && selectedTag !== 'all' || searchQuery) && <Button variant="outline" onClick={() => {
+          {/* Clear Filters Button */}
+          {(selectedCategory && selectedCategory !== 'all' || selectedCuisine && selectedCuisine !== 'all' || selectedTag && selectedTag !== 'all' || searchQuery) && <Button variant="outline" onClick={() => {
             setSearchQuery('');
             setSelectedCategory('all');
             setSelectedCuisine('all');
             setSelectedTag('all');
           }} className="text-xs w-full sm:w-auto">
-                Clear All
-              </Button>}
-          </div>
+            {t('dashboard.clearAll')}
+          </Button>}
         </div>
       </div>
+    </div>
 
 
-      {/* Content */}
-      <div className="min-h-[600px] space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
-        >
-          {loading ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="glass-card">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="h-4 bg-muted animate-pulse rounded mb-2" />
-                    <div className="h-3 bg-muted animate-pulse rounded w-2/3 mb-4" />
-                    <div className="h-20 bg-muted animate-pulse rounded" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : filteredPosts.length === 0 ? (
-            <Card className="glass-card">
-              <CardContent className="text-center py-12">
-                <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No food posts found</h3>
-                <p className="text-muted-foreground">
-                  {searchQuery ? "Try adjusting your search terms" : "Be the first to share food in your area!"}
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {currentView === 'list' && (
-                <ListView
-                  posts={filteredPosts}
-                  onRequestFood={handleRequestFood}
-                  onViewDetails={handleViewDetails}
-                  userRequests={userRequests}
-                  requestingPosts={requestingPosts}
-                  formatTimeAgo={formatTimeAgo}
-                />
-              )}
-              {currentView === 'grid' && (
-                <GridView
-                  posts={filteredPosts}
-                  onRequestFood={handleRequestFood}
-                  onViewDetails={handleViewDetails}
-                  userRequests={userRequests}
-                  requestingPosts={requestingPosts}
-                  formatTimeAgo={formatTimeAgo}
-                />
-              )}
-              {currentView === 'card' && (
-                <CardView
-                  posts={filteredPosts}
-                  onRequestFood={handleRequestFood}
-                  onViewDetails={handleViewDetails}
-                  userRequests={userRequests}
-                  requestingPosts={requestingPosts}
-                  formatTimeAgo={formatTimeAgo}
-                />
-              )}
-              {currentView === 'compact' && (
-                <CompactView
-                  posts={filteredPosts}
-                  onRequestFood={handleRequestFood}
-                  onViewDetails={handleViewDetails}
-                  userRequests={userRequests}
-                  requestingPosts={requestingPosts}
-                  formatTimeAgo={formatTimeAgo}
-                />
-              )}
-            </>
-          )}
-        </motion.div>
-      </div>
+    {/* Content */}
+    <div className="min-h-[600px] space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-4"
+      >
+        {loading ? (
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="glass-card">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="h-4 bg-muted animate-pulse rounded mb-2" />
+                  <div className="h-3 bg-muted animate-pulse rounded w-2/3 mb-4" />
+                  <div className="h-20 bg-muted animate-pulse rounded" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <Card className="glass-card">
+            <CardContent className="text-center py-12">
+              <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">{t('dashboard.noFoodAvailable')}</h3>
+              <p className="text-muted-foreground">
+                {searchQuery ? "Try adjusting your search terms" : "Be the first to share food in your area!"}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {currentView === 'list' && (
+              <ListView
+                posts={filteredPosts}
+                onRequestFood={handleRequestFood}
+                onViewDetails={handleViewDetails}
+                userRequests={userRequests}
+                requestingPosts={requestingPosts}
+                formatTimeAgo={formatTimeAgo}
+              />
+            )}
+            {currentView === 'grid' && (
+              <GridView
+                posts={filteredPosts}
+                onRequestFood={handleRequestFood}
+                onViewDetails={handleViewDetails}
+                userRequests={userRequests}
+                requestingPosts={requestingPosts}
+                formatTimeAgo={formatTimeAgo}
+              />
+            )}
+            {currentView === 'card' && (
+              <CardView
+                posts={filteredPosts}
+                onRequestFood={handleRequestFood}
+                onViewDetails={handleViewDetails}
+                userRequests={userRequests}
+                requestingPosts={requestingPosts}
+                formatTimeAgo={formatTimeAgo}
+              />
+            )}
+            {currentView === 'compact' && (
+              <CompactView
+                posts={filteredPosts}
+                onRequestFood={handleRequestFood}
+                onViewDetails={handleViewDetails}
+                userRequests={userRequests}
+                requestingPosts={requestingPosts}
+                formatTimeAgo={formatTimeAgo}
+              />
+            )}
+          </>
+        )}
+      </motion.div>
+    </div>
 
-      <FoodDetailsModal
-        post={selectedPost}
-        isOpen={showDetailsModal}
-        onClose={() => setShowDetailsModal(false)}
-        onRequestFood={handleRequestFood}
-        onViewProfile={handleViewProfile}
-        userRequests={userRequests}
-        requestingPosts={requestingPosts}
-      />
+    <FoodDetailsModal
+      post={selectedPost}
+      isOpen={showDetailsModal}
+      onClose={() => setShowDetailsModal(false)}
+      onRequestFood={handleRequestFood}
+      onViewProfile={handleViewProfile}
+      userRequests={userRequests}
+      requestingPosts={requestingPosts}
+    />
 
-      <ProviderProfileModal
-        post={selectedPost}
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-      />
-    </motion.div>;
+    <ProviderProfileModal
+      post={selectedPost}
+      isOpen={showProfileModal}
+      onClose={() => setShowProfileModal(false)}
+    />
+  </motion.div>;
 }

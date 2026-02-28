@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { MapPin, Clock2, Navigation, Send, CheckCircle, Loader2, Eye, Phone, MessageCircle } from 'lucide-react';
 import ExpiryBadge from '@/components/ExpiryBadge';
 import DynamicTranslation from '@/components/DynamicTranslation';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 interface FoodPost {
   id: string;
@@ -34,18 +35,18 @@ interface FoodPost {
   distance?: number;
 }
 
-const formatFoodStatus = (status: string) => {
+const formatFoodStatus = (status: string, t: any) => {
   switch (status) {
     case 'available':
-      return 'Available';
+      return t('status.available');
     case 'requested':
-      return 'Requested';
+      return t('status.requested');
     case 'reserved':
-      return 'Reserved';
+      return t('status.reserved');
     case 'completed':
-      return 'Completed';
+      return t('status.completed');
     case 'expired':
-      return 'Expired';
+      return t('status.expired');
     default:
       return status;
   }
@@ -68,6 +69,8 @@ export default function CardView({
   requestingPosts,
   formatTimeAgo
 }: CardViewProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="grid gap-4 sm:gap-8 grid-cols-1 md:grid-cols-2">
       {posts.map((post, index) => {
@@ -79,14 +82,14 @@ export default function CardView({
             key={post.id}
             initial={{ opacity: 0, y: 40, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ 
+            transition={{
               delay: index * 0.1,
               type: "spring",
               stiffness: 150,
               damping: 20
             }}
-            whileHover={{ 
-              y: -10, 
+            whileHover={{
+              y: -10,
               scale: 1.02,
               transition: { type: "spring", stiffness: 300, damping: 15 }
             }}
@@ -108,7 +111,7 @@ export default function CardView({
                     </div>
                   </div>
                 )}
-                
+
                 {/* Floating Badges */}
                 <div className="absolute top-4 left-4 right-4 flex justify-between">
                   <div className="flex gap-2 flex-wrap">
@@ -116,12 +119,12 @@ export default function CardView({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Badge variant="secondary" className="badge-overlay hover:bg-black/90">
-                            {formatFoodStatus(post.status)}
+                            {formatFoodStatus(post.status, t)}
                           </Badge>
                         </TooltipTrigger>
                         {post.status === 'expired' && (
                           <TooltipContent className="max-w-xs text-xs">
-                            This food has passed its best-before date and is no longer available.
+                            {t('card.expiredDesc')}
                           </TooltipContent>
                         )}
                       </Tooltip>
@@ -145,7 +148,7 @@ export default function CardView({
 
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 gradient-overlay-bottom" />
-                
+
                 {/* Title Overlay */}
                 <div className="absolute bottom-4 left-4 right-4">
                   <h3 className="text-overlay text-xl font-bold mb-2 line-clamp-2"><DynamicTranslation text={post.food_title} /></h3>
@@ -156,7 +159,7 @@ export default function CardView({
                     </span>
                     <span className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      {post.location_name || 'Pickup location'}
+                      {post.location_name || t('card.locationOwner')}
                     </span>
                   </div>
                 </div>
@@ -174,12 +177,12 @@ export default function CardView({
                     </Avatar>
                     <div>
                       <p className="font-medium">
-                        {post.profiles?.name || post.profiles?.full_name || 'Anonymous User'}
+                        {post.profiles?.name || post.profiles?.full_name || t('card.anonymousUser')}
                       </p>
-                      <p className="text-sm text-muted-foreground">Food Provider</p>
+                      <p className="text-sm text-muted-foreground">{t('card.by')} {post.profiles?.name || t('card.anonymousUser')}</p>
                     </div>
                   </div>
-                  
+
                 </div>
 
                 {/* Description */}
@@ -216,9 +219,9 @@ export default function CardView({
                     className="flex-1 w-full"
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    View Details
+                    {t('card.viewDetails')}
                   </Button>
-                  
+
                   {requestStatus ? (
                     <Button
                       disabled
@@ -228,15 +231,15 @@ export default function CardView({
                       {requestStatus === 'pending' ? (
                         <>
                           <Clock2 className="w-4 h-4 mr-2" />
-                          Request Sent
+                          {t('status.pending')}
                         </>
                       ) : requestStatus === 'accepted' ? (
                         <>
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          Accepted!
+                          {t('status.accepted')}
                         </>
                       ) : (
-                        'Request Declined'
+                        t('status.declined')
                       )}
                     </Button>
                   ) : (
@@ -252,27 +255,27 @@ export default function CardView({
                           {isRequesting ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Requesting...
+                              {t('card.requesting')}
                             </>
                           ) : (
                             <>
                               <Send className="w-4 h-4 mr-2" />
-                              Request Food
+                              {t('card.request')}
                             </>
                           )}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent className="max-w-sm mx-4">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Request this food?</AlertDialogTitle>
+                          <AlertDialogTitle>{t('card.requestFoodPrompt')}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            You are about to request "{post.food_title}" from {post.profiles?.name || post.profiles?.full_name || 'this provider'}. They will be notified of your request.
+                            {t('card.aboutToRequest').replace('{{food}}', post.food_title).replace('{{provider}}', post.profiles?.name || post.profiles?.full_name || t('card.anonymousUser'))}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel>{t('card.cancel')}</AlertDialogCancel>
                           <AlertDialogAction onClick={() => onRequestFood(post.id)}>
-                            Confirm Request
+                            {t('card.confirmRequest')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

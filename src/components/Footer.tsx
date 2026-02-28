@@ -1,7 +1,9 @@
 import { Leaf } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 export function Footer() {
+  const { t } = useLanguage();
   return (
     <footer className="border-t border-border/40 bg-muted/30 dark:bg-muted/10 mt-auto">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
@@ -12,9 +14,9 @@ export function Footer() {
             </div>
             <span className="font-semibold text-foreground/80">NourishNet</span>
           </Link>
-          
+
           <p className="text-xs sm:text-sm text-muted-foreground text-center">
-            © 2025 NourishNet. Reducing food waste, one meal at a time.
+            &copy; 2025 NourishNet. {t('footer.tagline')} {t('footer.credit')}
           </p>
         </div>
       </div>

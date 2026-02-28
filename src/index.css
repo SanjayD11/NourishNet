@@ -239,6 +239,61 @@
   html {
     scroll-behavior: smooth;
   }
+}
+
+/* Dynamic shimmer text animation for headings */
+@keyframes shimmer-text {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--foreground)) 0%,
+    hsl(var(--primary)) 25%,
+    hsl(var(--foreground)) 50%,
+    hsl(var(--primary)) 75%,
+    hsl(var(--foreground)) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-text 6s linear infinite;
+}
+
+.text-shimmer-rose {
+  background: linear-gradient(
+    90deg,
+    hsl(350 89% 60%) 0%,
+    hsl(330 80% 65%) 25%,
+    hsl(350 89% 60%) 50%,
+    hsl(340 82% 52%) 75%,
+    hsl(350 89% 60%) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-text 5s linear infinite;
+}
+
+/* Responsive heading padding for mobile */
+@media (max-width: 640px) {
+  .hero-title {
+    padding: 0 0.5rem;
+    font-size: 2.5rem !important;
+    line-height: 1.1;
+  }
+
+  .section-title {
+    padding: 0 0.5rem;
+    font-size: 1.75rem !important;
+  }
+}
+
+@layer base {
 
   /* Custom scrollbar */
   ::-webkit-scrollbar {

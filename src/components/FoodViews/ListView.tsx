@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { MapPin, Clock2, Navigation, Send, CheckCircle, Loader2, Eye } from 'lucide-react';
 import ExpiryBadge from '@/components/ExpiryBadge';
 import DynamicTranslation from '@/components/DynamicTranslation';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 interface FoodPost {
   id: string;
@@ -35,18 +36,18 @@ interface FoodPost {
   distance?: number;
 }
 
-const formatFoodStatus = (status: string) => {
+const formatFoodStatus = (status: string, t: any) => {
   switch (status) {
     case 'available':
-      return 'Available';
+      return t('status.available');
     case 'requested':
-      return 'Requested';
+      return t('status.requested');
     case 'reserved':
-      return 'Reserved';
+      return t('status.reserved');
     case 'completed':
-      return 'Completed';
+      return t('status.completed');
     case 'expired':
-      return 'Expired';
+      return t('status.expired');
     default:
       return status;
   }
@@ -69,6 +70,8 @@ export default function ListView({
   requestingPosts,
   formatTimeAgo
 }: ListViewProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-4">
       {posts.map((post, index) => {
@@ -98,23 +101,23 @@ export default function ListView({
                       <MapPin className="w-8 h-8 text-muted-foreground" />
                     </div>
                   )}
-                  
+
                   {/* Status Badge */}
                   <div className="absolute top-3 left-3">
-                     <TooltipProvider>
-                       <Tooltip>
-                         <TooltipTrigger asChild>
-                           <Badge variant="secondary" className="badge-overlay-light">
-                             {formatFoodStatus(post.status)}
-                           </Badge>
-                         </TooltipTrigger>
-                         {post.status === 'expired' && (
-                           <TooltipContent className="max-w-xs text-xs">
-                             This food has passed its best-before date and is no longer available.
-                           </TooltipContent>
-                         )}
-                       </Tooltip>
-                     </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="secondary" className="badge-overlay-light">
+                            {formatFoodStatus(post.status, t)}
+                          </Badge>
+                        </TooltipTrigger>
+                        {post.status === 'expired' && (
+                          <TooltipContent className="max-w-xs text-xs">
+                            {t('card.expiredDesc')}
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
 
@@ -176,7 +179,7 @@ export default function ListView({
                       {/* Location */}
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="w-4 h-4" />
-                        <span>{post.location_name || 'Location provided by owner'}</span>
+                        <span>{post.location_name || t('card.locationOwner')}</span>
                       </div>
 
                       {/* Provider */}
@@ -188,7 +191,7 @@ export default function ListView({
                           </AvatarFallback>
                         </Avatar>
                         <span className="text-muted-foreground">
-                          by {post.profiles?.name || post.profiles?.full_name || 'Anonymous User'}
+                          {t('card.by')} {post.profiles?.name || post.profiles?.full_name || t('card.anonymousUser')}
                         </span>
                       </div>
                     </div>
@@ -202,9 +205,9 @@ export default function ListView({
                         className="flex-1 w-full sm:w-auto"
                       >
                         <Eye className="w-4 h-4 mr-2" />
-                        View Details
+                        {t('card.viewDetails')}
                       </Button>
-                      
+
                       {requestStatus ? (
                         <Button
                           disabled
@@ -215,15 +218,15 @@ export default function ListView({
                           {requestStatus === 'pending' ? (
                             <>
                               <Clock2 className="w-4 h-4 mr-2" />
-                              Pending
+                              {t('status.pending')}
                             </>
                           ) : requestStatus === 'accepted' ? (
                             <>
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              Accepted!
+                              {t('status.accepted')}
                             </>
                           ) : (
-                            'Declined'
+                            t('status.declined')
                           )}
                         </Button>
                       ) : (
@@ -240,27 +243,27 @@ export default function ListView({
                               {isRequesting ? (
                                 <>
                                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  Requesting...
+                                  {t('card.requesting')}
                                 </>
                               ) : (
                                 <>
                                   <Send className="w-4 h-4 mr-2" />
-                                  Request
+                                  {t('card.request')}
                                 </>
                               )}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent className="max-w-sm mx-4">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Request this food?</AlertDialogTitle>
+                              <AlertDialogTitle>{t('card.requestFoodPrompt')}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                You are about to request "{post.food_title}" from {post.profiles?.name || post.profiles?.full_name || 'this provider'}. They will be notified of your request.
+                                {t('card.aboutToRequest').replace('{{food}}', post.food_title).replace('{{provider}}', post.profiles?.name || post.profiles?.full_name || t('card.anonymousUser'))}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogCancel>{t('card.cancel')}</AlertDialogCancel>
                               <AlertDialogAction onClick={() => onRequestFood(post.id)}>
-                                Confirm Request
+                                {t('card.confirmRequest')}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>

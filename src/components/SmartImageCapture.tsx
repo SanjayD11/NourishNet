@@ -14,6 +14,7 @@ interface ImageData {
 interface SmartImageCaptureProps {
   images: ImageData[];
   onImagesChange: (images: ImageData[]) => void;
+  onImageAdded?: (newImages: ImageData[]) => void;
   maxImages?: number;
   maxSizeMB?: number;
   maxResolution?: number;
@@ -33,27 +34,27 @@ const detectImageSource = async (file: File): Promise<'camera' | 'upload'> => {
       reader.onload = (e) => {
         try {
           const view = new DataView(e.target?.result as ArrayBuffer);
-          
+
           // Check for JPEG SOI marker
           if (view.getUint16(0, false) !== 0xFFD8) {
             resolve('upload');
             return;
           }
-          
+
           let offset = 2;
           const length = view.byteLength;
-          
+
           while (offset < length) {
             if (offset + 2 > length) break;
-            
+
             const marker = view.getUint16(offset, false);
             offset += 2;
-            
+
             // Look for APP1 marker (EXIF)
             if (marker === 0xFFE1) {
               if (offset + 2 > length) break;
               const exifLength = view.getUint16(offset, false);
-              
+
               // Check for "Exif" string
               if (offset + 6 <= length) {
                 const exifHeader = String.fromCharCode(
@@ -62,7 +63,7 @@ const detectImageSource = async (file: File): Promise<'camera' | 'upload'> => {
                   view.getUint8(offset + 4),
                   view.getUint8(offset + 5)
                 );
-                
+
                 if (exifHeader === 'Exif') {
                   // Has EXIF data - now look for camera-specific tags
                   const tiffOffset = offset + 8;
@@ -70,18 +71,18 @@ const detectImageSource = async (file: File): Promise<'camera' | 'upload'> => {
                     // Check TIFF header
                     const endian = view.getUint16(tiffOffset, false);
                     const littleEndian = endian === 0x4949;
-                    
+
                     const ifdOffset = view.getUint32(tiffOffset + 4, littleEndian);
                     const ifdStart = tiffOffset + ifdOffset;
-                    
+
                     if (ifdStart + 2 <= length) {
                       const numEntries = view.getUint16(ifdStart, littleEndian);
-                      
+
                       // Scan IFD entries for Make (0x010F) or Model (0x0110) tags
                       for (let i = 0; i < numEntries && ifdStart + 2 + (i * 12) + 12 <= length; i++) {
                         const entryOffset = ifdStart + 2 + (i * 12);
                         const tag = view.getUint16(entryOffset, littleEndian);
-                        
+
                         // 0x010F = Make, 0x0110 = Model, 0x9003 = DateTimeOriginal
                         if (tag === 0x010F || tag === 0x0110 || tag === 0x9003) {
                           resolve('camera');
@@ -92,7 +93,7 @@ const detectImageSource = async (file: File): Promise<'camera' | 'upload'> => {
                   }
                 }
               }
-              
+
               offset += exifLength;
             } else if ((marker & 0xFF00) === 0xFF00) {
               // Other marker - skip it
@@ -103,14 +104,14 @@ const detectImageSource = async (file: File): Promise<'camera' | 'upload'> => {
               break;
             }
           }
-          
+
           resolve('upload');
         } catch {
           resolve('upload');
         }
       };
       reader.onerror = () => resolve('upload');
-      
+
       // Only read first 128KB for EXIF detection
       const blob = file.slice(0, 131072);
       reader.readAsArrayBuffer(blob);
@@ -129,19 +130,19 @@ const compressImage = async (
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
-    
+
     img.onload = () => {
       URL.revokeObjectURL(url);
-      
+
       let { width, height } = img;
       const needsResize = width > maxResolution || height > maxResolution;
       const needsCompress = file.size > maxSizeMB * 1024 * 1024;
-      
+
       if (!needsResize && !needsCompress) {
         resolve({ file, wasCompressed: false });
         return;
       }
-      
+
       // Calculate new dimensions
       if (needsResize) {
         if (width > height) {
@@ -156,20 +157,20 @@ const compressImage = async (
           }
         }
       }
-      
+
       // Create canvas and compress
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
-      
+
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         resolve({ file, wasCompressed: false });
         return;
       }
-      
+
       ctx.drawImage(img, 0, 0, width, height);
-      
+
       // Try different quality levels to get under size limit
       const tryCompress = (quality: number): void => {
         canvas.toBlob(
@@ -178,32 +179,32 @@ const compressImage = async (
               resolve({ file, wasCompressed: false });
               return;
             }
-            
+
             if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.3) {
               tryCompress(quality - 0.1);
               return;
             }
-            
+
             const compressedFile = new File([blob], file.name, {
               type: 'image/jpeg',
               lastModified: Date.now(),
             });
-            
+
             resolve({ file: compressedFile, wasCompressed: true });
           },
           'image/jpeg',
           quality
         );
       };
-      
+
       tryCompress(0.85);
     };
-    
+
     img.onerror = () => {
       URL.revokeObjectURL(url);
       resolve({ file, wasCompressed: false });
     };
-    
+
     img.src = url;
   });
 };
@@ -211,6 +212,7 @@ const compressImage = async (
 export default function SmartImageCapture({
   images,
   onImagesChange,
+  onImageAdded,
   maxImages = 3,
   maxSizeMB = 5,
   maxResolution = 1920,
@@ -219,12 +221,12 @@ export default function SmartImageCapture({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [processing, setProcessing] = useState(false);
-  
+
   const isMobile = isMobileDevice();
 
   const processFiles = useCallback(async (files: File[]) => {
     if (files.length === 0) return;
-    
+
     // Check limit
     if (images.length + files.length > maxImages) {
       toast({
@@ -234,11 +236,11 @@ export default function SmartImageCapture({
       });
       return;
     }
-    
+
     setProcessing(true);
     const newImages: ImageData[] = [];
     let anyCompressed = false;
-    
+
     for (const file of files) {
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
@@ -250,11 +252,11 @@ export default function SmartImageCapture({
         });
         continue;
       }
-      
+
       try {
         // Detect source from EXIF
         const source = await detectImageSource(file);
-        
+
         // Compress if needed
         let finalFile = file;
         if (file.size > maxSizeMB * 1024 * 1024 || file.size > 3 * 1024 * 1024) {
@@ -266,14 +268,14 @@ export default function SmartImageCapture({
           finalFile = compressed;
           if (wasCompressed) anyCompressed = true;
         }
-        
+
         // Create preview
         const preview = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onload = (e) => resolve(e.target?.result as string);
           reader.readAsDataURL(finalFile);
         });
-        
+
         newImages.push({
           file: finalFile,
           preview,
@@ -288,10 +290,15 @@ export default function SmartImageCapture({
         });
       }
     }
-    
+
     if (newImages.length > 0) {
       onImagesChange([...images, ...newImages]);
-      
+
+      // Notify parent about newly added images (for auto-scan etc.)
+      if (onImageAdded) {
+        onImageAdded(newImages);
+      }
+
       if (anyCompressed) {
         toast({
           title: "Image optimized",
@@ -299,7 +306,7 @@ export default function SmartImageCapture({
         });
       }
     }
-    
+
     setProcessing(false);
   }, [images, maxImages, maxSizeMB, maxResolution, onImagesChange, toast]);
 
@@ -332,7 +339,7 @@ export default function SmartImageCapture({
       {/* Image Previews */}
       <AnimatePresence mode="popLayout">
         {images.length > 0 && (
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -353,10 +360,10 @@ export default function SmartImageCapture({
                     alt={`Food preview ${index + 1}`}
                     className="w-full h-40 object-cover"
                   />
-                  
+
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                  
+
                   {/* Remove button */}
                   <Button
                     type="button"
@@ -367,7 +374,7 @@ export default function SmartImageCapture({
                   >
                     <X className="w-4 h-4" />
                   </Button>
-                  
+
                   {/* Badges */}
                   <div className="absolute bottom-2 left-2 flex gap-2">
                     {index === 0 && (
@@ -375,10 +382,10 @@ export default function SmartImageCapture({
                         Main Image
                       </Badge>
                     )}
-                    
+
                     {image.source === 'camera' && (
-                      <Badge 
-                        variant="secondary" 
+                      <Badge
+                        variant="secondary"
                         className="bg-emerald-500/90 text-white backdrop-blur-sm text-xs flex items-center gap-1"
                       >
                         <Camera className="w-3 h-3" />
@@ -411,13 +418,13 @@ export default function SmartImageCapture({
                 <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <ImagePlus className="w-7 h-7 text-primary" />
                 </div>
-                
+
                 <p className="text-sm text-muted-foreground mb-4">
                   {images.length === 0
                     ? "Add photos of your food to help others see what you're sharing"
                     : `Add ${maxImages - images.length} more photo${maxImages - images.length > 1 ? 's' : ''}`}
                 </p>
-                
+
                 <Button
                   type="button"
                   onClick={handleAddPhoto}
@@ -436,7 +443,7 @@ export default function SmartImageCapture({
                     </>
                   )}
                 </Button>
-                
+
                 {isMobile && (
                   <Button
                     type="button"
@@ -450,7 +457,7 @@ export default function SmartImageCapture({
                     Choose from gallery
                   </Button>
                 )}
-                
+
                 {/* Trust tip */}
                 <p className="group/tip mt-4 text-xs text-muted-foreground/80 flex items-center justify-center gap-1.5 cursor-default">
                   <Camera className="w-3.5 h-3.5 text-primary/60 animate-pulse group-hover/tip:text-primary group-hover/tip:scale-110 group-hover/tip:rotate-12 group-hover/tip:animate-none transition-all duration-300" />
@@ -472,7 +479,7 @@ export default function SmartImageCapture({
         onChange={handleFileChange}
         className="hidden"
       />
-      
+
       {/* File picker for desktop/gallery */}
       <input
         ref={fileInputRef}
@@ -487,7 +494,7 @@ export default function SmartImageCapture({
       <div className="flex items-start gap-2 text-xs text-muted-foreground">
         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
         <span>
-          First image is the main display. JPG/PNG only, max 5MB each. 
+          First image is the main display. JPG/PNG only, max 5MB each.
           Large photos are automatically optimized.
         </span>
       </div>

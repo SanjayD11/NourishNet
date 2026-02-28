@@ -88,7 +88,7 @@ export function RatingModal({ open, onOpenChange, providerId, postId, providerNa
         receiver_id: user.id,
         post_id: postId,
         rating: rating,
-        report_reason: reviewText || null, // Using report_reason field for review text
+        report_reason: reviewText || null,
         is_report: false,
       });
 
@@ -230,11 +230,10 @@ export function RatingModal({ open, onOpenChange, providerId, postId, providerNa
                         className="transition-colors p-1"
                       >
                         <Star
-                          className={`w-10 h-10 transition-colors ${
-                            star <= (hoveredRating || rating)
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-muted-foreground/30'
-                          }`}
+                          className={`w-10 h-10 transition-colors ${star <= (hoveredRating || rating)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-muted-foreground/30'
+                            }`}
                         />
                       </motion.button>
                     ))}
@@ -261,9 +260,8 @@ export function RatingModal({ open, onOpenChange, providerId, postId, providerNa
                         >
                           <Badge
                             variant={isSelected ? 'default' : 'outline'}
-                            className={`cursor-pointer transition-all ${
-                              isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-                            }`}
+                            className={`cursor-pointer transition-all ${isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                              }`}
                           >
                             <Icon className="w-3 h-3 mr-1" />
                             {tag.label}
@@ -319,11 +317,10 @@ export function RatingModal({ open, onOpenChange, providerId, postId, providerNa
                         onClick={() => setReportReason(reason.id)}
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
-                        className={`p-3 rounded-lg border text-left transition-all ${
-                          reportReason === reason.id
-                            ? 'border-destructive bg-destructive/10 text-destructive'
-                            : 'border-border hover:border-muted-foreground/50'
-                        }`}
+                        className={`p-3 rounded-lg border text-left transition-all ${reportReason === reason.id
+                          ? 'border-destructive bg-destructive/10 text-destructive'
+                          : 'border-border hover:border-muted-foreground/50'
+                          }`}
                       >
                         <span className="font-medium">{reason.label}</span>
                       </motion.button>

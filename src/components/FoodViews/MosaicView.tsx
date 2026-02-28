@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { MapPin, Clock2, Navigation, Send, CheckCircle, Loader2, Eye, Utensils } from 'lucide-react';
 import ExpiryBadge from '@/components/ExpiryBadge';
 import DynamicTranslation from '@/components/DynamicTranslation';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 interface FoodPost {
   id: string;
@@ -32,18 +33,18 @@ interface FoodPost {
   distance?: number;
 }
 
-const formatFoodStatus = (status: string) => {
+const formatFoodStatus = (status: string, t: any) => {
   switch (status) {
     case 'available':
-      return 'Available';
+      return t('status.available');
     case 'requested':
-      return 'Requested';
+      return t('status.requested');
     case 'reserved':
-      return 'Reserved';
+      return t('status.reserved');
     case 'completed':
-      return 'Completed';
+      return t('status.completed');
     case 'expired':
-      return 'Expired';
+      return t('status.expired');
     default:
       return status;
   }
@@ -66,6 +67,8 @@ export default function MosaicView({
   requestingPosts,
   formatTimeAgo
 }: MosaicViewProps) {
+  const { t } = useLanguage();
+
   const getGridItemClass = (index: number) => {
     // Create dynamic mosaic pattern
     const patterns = [
@@ -92,9 +95,8 @@ export default function MosaicView({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
-            className={`glass-card overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer ${
-              isLargeCard ? 'sm:col-span-2 sm:row-span-2' : ''
-            }`}
+            className={`glass-card overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer ${isLargeCard ? 'sm:col-span-2 sm:row-span-2' : ''
+              }`}
             whileHover={{ y: -4, scale: 1.02 }}
             onClick={() => onViewDetails(post)}
           >
@@ -112,29 +114,29 @@ export default function MosaicView({
                   <Utensils className="w-8 h-8 fallback-text" />
                 </div>
               )}
-              
+
               {/* Overlay badges */}
-                <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-                 <TooltipProvider>
-                   <Tooltip>
-                     <TooltipTrigger asChild>
-                       <Badge variant="secondary" className="badge-overlay text-xs hover:bg-black/90">
-                         {formatFoodStatus(post.status)}
-                       </Badge>
-                     </TooltipTrigger>
-                     {post.status === 'expired' && (
-                       <TooltipContent className="max-w-xs text-xs">
-                         This food has passed its best-before date and is no longer available.
-                       </TooltipContent>
-                     )}
-                   </Tooltip>
-                 </TooltipProvider>
-                 {post.food_category && (
-                   <Badge variant="secondary" className="badge-overlay-light text-xs">
-                     {post.food_category.replace('_', ' ')}
-                   </Badge>
-                 )}
-               </div>
+              <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="secondary" className="badge-overlay text-xs hover:bg-black/90">
+                        {formatFoodStatus(post.status, t)}
+                      </Badge>
+                    </TooltipTrigger>
+                    {post.status === 'expired' && (
+                      <TooltipContent className="max-w-xs text-xs">
+                        {t('card.expiredDesc')}
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+                {post.food_category && (
+                  <Badge variant="secondary" className="badge-overlay-light text-xs">
+                    {post.food_category.replace('_', ' ')}
+                  </Badge>
+                )}
+              </div>
 
               {/* Distance badge */}
               {post.distance && (
@@ -158,12 +160,11 @@ export default function MosaicView({
             {/* Content Section */}
             <div className={`p-3 space-y-2 ${isLargeCard ? 'p-4 space-y-3' : ''}`}>
               <div className="space-y-1">
-                <h3 className={`font-bold text-foreground line-clamp-2 group-hover:text-primary transition-colors ${
-                  isLargeCard ? 'text-lg' : 'text-sm'
-                }`}>
+                <h3 className={`font-bold text-foreground line-clamp-2 group-hover:text-primary transition-colors ${isLargeCard ? 'text-lg' : 'text-sm'
+                  }`}>
                   <DynamicTranslation text={post.food_title} />
                 </h3>
-                
+
                 {isLargeCard && (
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     <DynamicTranslation text={post.description} />
@@ -229,9 +230,9 @@ export default function MosaicView({
                   ) : (
                     <Send className="w-3 h-3" />
                   )}
-                  {!isLargeCard ? '' : isRequesting ? 'Requesting...' : requestStatus === 'pending' ? 'Pending' : requestStatus === 'accepted' ? 'Accepted!' : 'Request'}
+                  {!isLargeCard ? '' : isRequesting ? t('card.requesting') : requestStatus === 'pending' ? t('status.pending') : requestStatus === 'accepted' ? t('status.accepted') : t('card.request')}
                 </Button>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -242,7 +243,7 @@ export default function MosaicView({
                   }}
                 >
                   <Eye className="w-3 h-3" />
-                  {isLargeCard && <span className="ml-1">View</span>}
+                  {isLargeCard && <span className="ml-1">{t('card.viewDetails')}</span>}
                 </Button>
               </div>
             </div>

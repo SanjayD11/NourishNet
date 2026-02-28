@@ -35,18 +35,18 @@ interface FoodPost {
   distance?: number;
 }
 
-const formatFoodStatus = (status: string) => {
+const formatFoodStatus = (status: string, t: any) => {
   switch (status) {
     case 'available':
-      return 'Available';
+      return t('status.available');
     case 'requested':
-      return 'Requested';
+      return t('status.requested');
     case 'reserved':
-      return 'Reserved';
+      return t('status.reserved');
     case 'completed':
-      return 'Completed';
+      return t('status.completed');
     case 'expired':
-      return 'Expired';
+      return t('status.expired');
     default:
       return status;
   }
@@ -81,14 +81,14 @@ export default function GridView({
             key={post.id}
             initial={{ opacity: 0, y: 30, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ 
+            transition={{
               delay: index * 0.1,
               type: "spring",
               stiffness: 200,
               damping: 20
             }}
-            whileHover={{ 
-              y: -8, 
+            whileHover={{
+              y: -8,
               scale: 1.03,
               transition: { type: "spring", stiffness: 400, damping: 20 }
             }}
@@ -111,19 +111,19 @@ export default function GridView({
                     </div>
                   </div>
                 )}
-                
-                 {/* Status and Distance Badges */}
-                 <div className="absolute top-3 left-3 right-3 flex justify-between">
+
+                {/* Status and Distance Badges */}
+                <div className="absolute top-3 left-3 right-3 flex justify-between">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Badge variant="secondary" className="badge-overlay-light">
-                          {formatFoodStatus(post.status)}
+                          {formatFoodStatus(post.status, t)}
                         </Badge>
                       </TooltipTrigger>
                       {post.status === 'expired' && (
                         <TooltipContent className="max-w-xs text-xs">
-                          This food has passed its best-before date and is no longer available.
+                          {t('card.expiredDesc')}
                         </TooltipContent>
                       )}
                     </Tooltip>
@@ -167,7 +167,7 @@ export default function GridView({
                     </AvatarFallback>
                   </Avatar>
                   <span className="text-sm text-muted-foreground truncate">
-                    {post.profiles?.name || post.profiles?.full_name || 'Anonymous User'}
+                    {post.profiles?.name || post.profiles?.full_name || t('card.anonymousUser')}
                   </span>
                 </div>
               </CardHeader>
@@ -207,7 +207,7 @@ export default function GridView({
                 {/* Location */}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <MapPin className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">{post.location_name || 'Location provided by owner'}</span>
+                  <span className="truncate">{post.location_name || t('card.locationOwner')}</span>
                 </div>
 
                 {/* Action Buttons */}
@@ -219,9 +219,9 @@ export default function GridView({
                     className="flex-1 w-full sm:w-auto"
                   >
                     <Eye className="w-4 h-4 mr-1" />
-                    Details
+                    {t('card.viewDetails')}
                   </Button>
-                  
+
                   {requestStatus ? (
                     <Button
                       disabled
@@ -232,15 +232,15 @@ export default function GridView({
                       {requestStatus === 'pending' ? (
                         <>
                           <Clock2 className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">Pending</span>
+                          <span className="hidden sm:inline">{t('status.pending')}</span>
                         </>
                       ) : requestStatus === 'accepted' ? (
                         <>
                           <CheckCircle className="w-4 h-4 mr-1" />
-                          <span className="hidden sm:inline">Accepted</span>
+                          <span className="hidden sm:inline">{t('status.accepted')}</span>
                         </>
                       ) : (
-                        'Declined'
+                        t('status.declined')
                       )}
                     </Button>
                   ) : (
@@ -259,22 +259,22 @@ export default function GridView({
                           ) : (
                             <>
                               <Send className="w-4 h-4 mr-1" />
-                              <span className="hidden sm:inline">Request</span>
+                              <span className="hidden sm:inline">{t('card.request')}</span>
                             </>
                           )}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent className="max-w-sm mx-4">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Request this food?</AlertDialogTitle>
+                          <AlertDialogTitle>{t('card.requestFoodPrompt')}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            You are about to request "{post.food_title}" from {post.profiles?.name || post.profiles?.full_name || 'this provider'}. They will be notified of your request.
+                            {t('card.aboutToRequest').replace('{{food}}', post.food_title).replace('{{provider}}', post.profiles?.name || post.profiles?.full_name || t('card.anonymousUser'))}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel>{t('card.cancel')}</AlertDialogCancel>
                           <AlertDialogAction onClick={() => onRequestFood(post.id)}>
-                            Confirm Request
+                            {t('card.confirmRequest')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

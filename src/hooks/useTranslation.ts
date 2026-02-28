@@ -8,6 +8,8 @@ const getLanguageCode = (lang: Language): string => {
   switch (lang) {
     case 'ta': return 'ta';
     case 'hi': return 'hi';
+    case 'te': return 'te';
+    case 'bn': return 'bn';
     default: return 'en';
   }
 };
@@ -22,7 +24,7 @@ export const translateText = async (
 ): Promise<string> => {
   if (!text || text.trim() === '') return text;
   if (targetLang === 'en') return text; // Assume source is English
-  
+
   const cacheKey = getCacheKey(text, targetLang);
   if (translationCache.has(cacheKey)) {
     return translationCache.get(cacheKey)!;
@@ -33,20 +35,20 @@ export const translateText = async (
     const response = await fetch(
       `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${langCode}`
     );
-    
+
     if (!response.ok) {
       console.warn('Translation API error:', response.status);
       return text;
     }
-    
+
     const data = await response.json();
-    
+
     if (data.responseStatus === 200 && data.responseData?.translatedText) {
       const translated = data.responseData.translatedText;
       translationCache.set(cacheKey, translated);
       return translated;
     }
-    
+
     return text;
   } catch (error) {
     console.warn('Translation failed:', error);

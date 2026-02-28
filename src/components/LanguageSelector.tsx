@@ -1,4 +1,4 @@
-import { Globe } from 'lucide-react';
+import { Globe, Check } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,49 +6,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
-
-type Language = 'en' | 'ta' | 'hi';
+import { useLanguage, type Language } from '@/providers/LanguageProvider';
 
 const languages: { code: Language; label: string; nativeLabel: string }[] = [
   { code: 'en', label: 'English', nativeLabel: 'English' },
   { code: 'ta', label: 'Tamil', nativeLabel: 'தமிழ்' },
   { code: 'hi', label: 'Hindi', nativeLabel: 'हिंदी' },
+  { code: 'te', label: 'Telugu', nativeLabel: 'తెలుగు' },
+  { code: 'bn', label: 'Bengali', nativeLabel: 'বাংলা' },
 ];
 
-// Extend window type for TypeScript
-declare global {
-  interface Window {
-    changeLanguage: (lang: string) => void;
-  }
-}
-
 export function LanguageSelector() {
-  const [currentLanguage, setCurrentLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('nourishnet_lang');
-    return (saved as Language) || 'en';
-  });
-
-  // Sync with localStorage changes
-  useEffect(() => {
-    const handleStorage = () => {
-      const saved = localStorage.getItem('nourishnet_lang');
-      if (saved) {
-        setCurrentLanguage(saved as Language);
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
-
-  const handleLanguageChange = (lang: Language) => {
-    setCurrentLanguage(lang);
-    
-    // Use the global changeLanguage function from index.html
-    if (window.changeLanguage) {
-      window.changeLanguage(lang);
-    }
-  };
+  const { language, setLanguage } = useLanguage();
 
   return (
     <DropdownMenu>
@@ -63,18 +32,17 @@ export function LanguageSelector() {
           <span className="sr-only">Select Language</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
+      <DropdownMenuContent align="end" className="w-44">
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
-            onClick={() => handleLanguageChange(lang.code)}
-            className={`flex items-center justify-between cursor-pointer ${
-              currentLanguage === lang.code ? 'bg-accent' : ''
-            }`}
+            onClick={() => setLanguage(lang.code)}
+            className={`flex items-center justify-between cursor-pointer ${language === lang.code ? 'bg-accent' : ''
+              }`}
           >
             <span>{lang.nativeLabel}</span>
-            {currentLanguage === lang.code && (
-              <span className="text-xs text-primary">✓</span>
+            {language === lang.code && (
+              <Check className="w-4 h-4 text-primary" />
             )}
           </DropdownMenuItem>
         ))}

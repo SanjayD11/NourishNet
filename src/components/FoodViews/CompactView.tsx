@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { MapPin, Clock2, Navigation, Send, CheckCircle, Loader2, Eye } from 'lucide-react';
 import ExpiryBadge from '@/components/ExpiryBadge';
 import DynamicTranslation from '@/components/DynamicTranslation';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 interface FoodPost {
   id: string;
@@ -34,18 +35,18 @@ interface FoodPost {
   distance?: number;
 }
 
-const formatFoodStatus = (status: string) => {
+const formatFoodStatus = (status: string, t: any) => {
   switch (status) {
     case 'available':
-      return 'Available';
+      return t('status.available');
     case 'requested':
-      return 'Requested';
+      return t('status.requested');
     case 'reserved':
-      return 'Reserved';
+      return t('status.reserved');
     case 'completed':
-      return 'Completed';
+      return t('status.completed');
     case 'expired':
-      return 'Expired';
+      return t('status.expired');
     default:
       return status;
   }
@@ -68,6 +69,8 @@ export default function CompactView({
   requestingPosts,
   formatTimeAgo
 }: CompactViewProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-2">
       {posts.map((post, index) => {
@@ -110,12 +113,12 @@ export default function CompactView({
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Badge variant="secondary" className="text-[10px] px-2 py-0">
-                                  {formatFoodStatus(post.status)}
+                                  {formatFoodStatus(post.status, t)}
                                 </Badge>
                               </TooltipTrigger>
                               {post.status === 'expired' && (
                                 <TooltipContent className="max-w-xs text-xs">
-                                  This food has passed its best-before date and is no longer available.
+                                  {t('card.expiredDesc')}
                                 </TooltipContent>
                               )}
                             </Tooltip>
@@ -124,7 +127,7 @@ export default function CompactView({
                         <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
                           <DynamicTranslation text={post.description} />
                         </p>
-                        
+
                         {/* Meta Info */}
                         <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -148,7 +151,7 @@ export default function CompactView({
                               </AvatarFallback>
                             </Avatar>
                             <span className="truncate max-w-20">
-                              {post.profiles?.name || post.profiles?.full_name || 'User'}
+                              {post.profiles?.name || post.profiles?.full_name || t('card.anonymousUser')}
                             </span>
                           </span>
                         </div>
@@ -178,7 +181,7 @@ export default function CompactView({
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        
+
                         {requestStatus ? (
                           <Button
                             disabled
@@ -214,15 +217,15 @@ export default function CompactView({
                             </AlertDialogTrigger>
                             <AlertDialogContent className="max-w-sm mx-4">
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Request this food?</AlertDialogTitle>
+                                <AlertDialogTitle>{t('card.requestFoodPrompt')}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  You are about to request "{post.food_title}" from {post.profiles?.name || post.profiles?.full_name || 'this provider'}. They will be notified.
+                                  {t('card.aboutToRequest').replace('{{food}}', post.food_title).replace('{{provider}}', post.profiles?.name || post.profiles?.full_name || t('card.anonymousUser'))}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>{t('card.cancel')}</AlertDialogCancel>
                                 <AlertDialogAction onClick={() => onRequestFood(post.id)}>
-                                  Confirm
+                                  {t('card.confirmRequest')}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

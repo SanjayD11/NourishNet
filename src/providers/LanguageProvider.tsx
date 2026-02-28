@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { translateText } from '@/hooks/useTranslation';
 
-export type Language = 'en' | 'ta' | 'hi';
+export type Language = 'en' | 'ta' | 'hi' | 'te' | 'bn';
 
 interface LanguageContextType {
   language: Language;
@@ -24,7 +24,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.managePosts': 'Manage Posts',
     'nav.profile': 'Show Profile',
     'nav.logout': 'Log Out',
-    
+
     // Homepage
     'home.badge': 'Reducing Food Waste Together',
     'home.title': 'NourishNet',
@@ -36,7 +36,7 @@ const translations: Record<Language, Record<string, string>> = {
     'home.whyNourishNet': 'Why NourishNet?',
     'home.joinMovement': 'Join the Movement Today',
     'home.joinSubtitle': 'Be part of a community that\'s making a difference. Share food, reduce waste, and help nourish your neighbors.',
-    
+
     // Stats
     'stats.communityMembers': 'Community Members',
     'stats.foodItemsShared': 'Food Items Shared',
@@ -44,7 +44,7 @@ const translations: Record<Language, Record<string, string>> = {
     'stats.requestsFulfilled': 'Requests Fulfilled',
     'stats.impact': 'Making a Real Impact',
     'stats.impactSubtitle': 'Our community is actively working together to reduce food waste and help those in need.',
-    
+
     // Features
     'features.howItWorks': 'How NourishNet Works',
     'features.howItWorksSubtitle': 'Simple, secure, and sustainable food sharing in your community.',
@@ -54,11 +54,11 @@ const translations: Record<Language, Record<string, string>> = {
     'features.communityNetworkDesc': 'Connect with verified community members who care about reducing food waste.',
     'features.smartMatching': 'Smart Matching',
     'features.smartMatchingDesc': 'Advanced filters help you find exactly what you need or share what you have.',
-    
+
     // Problem Section
     'problem.title': 'The Problem – Food Waste is a Global Crisis',
     'problem.subtitle': 'Every year, billions of tons of perfectly good food ends up in landfills while millions go hungry. This waste contributes to climate change and economic loss.',
-    
+
     // Solution Section
     'solution.title': 'The Solution',
     'solution.subtitle': 'NourishNet connects food donors with people in need through a community-driven platform.',
@@ -68,7 +68,7 @@ const translations: Record<Language, Record<string, string>> = {
     'solution.requestConnectDesc': 'Find nearby food and chat securely for pickup.',
     'solution.trackImpact': 'Track Impact',
     'solution.trackImpactDesc': 'View meals saved and waste reduced.',
-    
+
     // Platform Features
     'platform.title': 'Platform Features',
     'platform.subtitle': 'Built with modern technology for safe and impactful food sharing.',
@@ -78,7 +78,7 @@ const translations: Record<Language, Record<string, string>> = {
     'platform.verifiedCommunityDesc': 'Ratings and reviews for trust.',
     'platform.sustainabilityTracking': 'Sustainability Tracking',
     'platform.sustainabilityTrackingDesc': 'Monitor meals saved and impact.',
-    
+
     // Requests
     'requests.incoming': 'Incoming Requests',
     'requests.outgoing': 'My Requests',
@@ -92,7 +92,7 @@ const translations: Record<Language, Record<string, string>> = {
     'requests.markedClaimed': 'Marked as Claimed',
     'requests.finished': 'Finished',
     'requests.awaitingPickup': 'Awaiting Pickup',
-    
+
     // Common
     'common.loading': 'Loading...',
     'common.error': 'Error',
@@ -110,7 +110,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.sort': 'Sort',
     'common.noResults': 'No results found',
     'common.backToTop': 'Back to Top',
-    
+
     // Dashboard
     'dashboard.title': 'Food Near You',
     'dashboard.subtitle': 'Discover available food in your community',
@@ -126,19 +126,143 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.allCategories': 'All Categories',
     'dashboard.allCuisines': 'All Cuisines',
     'dashboard.allTags': 'All Tags',
-    
+
     // Footer
-    'footer.tagline': 'Share food, reduce waste, nourish community.',
+    'footer.tagline': 'Reducing food waste, one meal at a time.',
+    'footer.credit': 'A product by Sanjay Dharmarajou',
     'footer.privacy': 'Privacy',
     'footer.terms': 'Terms',
     'footer.contact': 'Contact',
     'footer.rights': 'All rights reserved.',
-    
+
     // Language
     'language.english': 'English',
     'language.tamil': 'தமிழ்',
     'language.hindi': 'हिंदी',
+    'language.telugu': 'తెలుగు',
+    'language.bengali': 'বাংলা',
     'language.select': 'Select Language',
+
+    // Health Advisor
+    'healthAdvisor.title': 'AI Health Advisor',
+    'healthAdvisor.desc': 'Get instant AI-powered health insights from food images.',
+    'healthAdvisor.upload': 'Upload Food Images',
+    'healthAdvisor.uploadDesc': 'Take a photo or upload images of food to analyze (max 3)',
+    'healthAdvisor.analyzing': 'Analyzing...',
+    'healthAdvisor.analyze': 'Analyze Health Risk',
+    'healthAdvisor.results': 'Health Analysis Results',
+    'healthAdvisor.analyzingRisks': 'Analyzing health risks...',
+    'healthAdvisor.aiEvaluating': 'AI is evaluating nutritional and health data',
+    'healthAdvisor.diabeticRisk': 'Diabetic Risk',
+    'healthAdvisor.cholesterolImpact': 'Cholesterol Impact',
+    'healthAdvisor.weightGain': 'Weight Gain Potential',
+    'healthAdvisor.aiSuggestion': 'AI Suggestion',
+    'healthAdvisor.disclaimer': 'AI-generated insights. Not a medical diagnosis.',
+
+    // PostFood
+    'postFood.foodDetails': 'Food Details',
+    'postFood.foodDetailsDesc': 'Provide information about the food you want to share',
+    'postFood.foodTitle': 'Food Title',
+    'postFood.description': 'Description',
+    'postFood.foodCategory': 'Food Category',
+    'postFood.selectCategory': 'Select food category',
+    'postFood.cuisineType': 'Cuisine Type',
+    'postFood.selectCuisine': 'Select cuisine type',
+    'postFood.pickupLocation': 'Pickup Location',
+    'postFood.useCurrentLocation': 'Use Current Location',
+    'postFood.locating': 'Locating...',
+    'postFood.latitude': 'Latitude',
+    'postFood.longitude': 'Longitude',
+    'postFood.tags': 'Tags',
+    'postFood.tagsDesc': 'Select tags that describe your food',
+    'postFood.foodImages': 'Food Images (Up to 3 images)',
+    'postFood.bestBefore': 'Best Before',
+    'postFood.selectDate': 'Select best before date & time',
+    'postFood.shareFood': 'Share Food with Community',
+    'postFood.sharing': 'Sharing...',
+    'postFood.completeProfile': 'Complete Your Profile First',
+    'postFood.completeProfileDesc': 'Please complete your profile before sharing food.',
+    'postFood.completeProfileBtn': 'Complete Profile',
+    'postFood.coordinates': 'Coordinates',
+    'postFood.locationHelp': 'Use your current location or enter a detailed pickup address.',
+
+    // ManagePosts
+    'managePosts.posted': 'Posted',
+    'managePosts.noPostsYet': 'No posts yet',
+    'managePosts.startSharing': 'Start sharing food with your community to see your posts here.',
+    'managePosts.editPost': 'Edit Food Post',
+    'managePosts.editPostDesc': 'You can only update the location.',
+    'managePosts.foodImage': 'Food Image',
+    'managePosts.viewFullImage': 'View Full Image',
+    'managePosts.noImage': 'No image',
+    'managePosts.noImageAvailable': 'No image available',
+    'managePosts.location': 'Location (Editable)',
+    'managePosts.enterLocation': 'Enter your location',
+    'managePosts.useCurrent': 'Use Current',
+    'managePosts.getting': 'Getting...',
+    'managePosts.saving': 'Saving...',
+    'managePosts.updateLocation': 'Update Location',
+    'managePosts.deletePost': 'Delete Post',
+    'managePosts.deleteConfirm': 'Are you sure? This action cannot be undone.',
+    'managePosts.bestBefore': 'Best before',
+    'managePosts.close': 'Close',
+
+    // Profile
+    'profile.name': 'Name',
+    'profile.bio': 'Bio',
+    'profile.location': 'Location/Address',
+    'profile.phone': 'Phone Number',
+    'profile.whatsapp': 'WhatsApp Number',
+    'profile.editProfile': 'Edit Profile',
+    'profile.save': 'Save',
+    'profile.saving': 'Saving...',
+    'profile.myFoodPosts': 'My Food Posts',
+    'profile.noPostsYet': 'No food posts yet',
+    'profile.startSharing': 'Start sharing food with your community',
+    'profile.shareFood': 'Share Food',
+    'profile.postedOn': 'Posted on',
+    'profile.markTaken': 'Mark as Taken',
+    'profile.markAvailable': 'Mark Available',
+
+    // Cards & Time formatting
+    'time.justNow': 'Just now',
+    'time.hoursAgo': 'h ago',
+    'time.daysAgo': 'd ago',
+    'status.available': 'Available',
+    'status.requested': 'Requested',
+    'status.reserved': 'Reserved',
+    'status.completed': 'Completed',
+    'status.expired': 'Expired',
+    'status.collected': 'Collected',
+    'status.pending': 'Pending',
+    'status.accepted': 'Accepted',
+    'status.declined': 'Declined',
+    'status.cancelled': 'Cancelled',
+    'card.request': 'Request',
+    'card.requesting': 'Requesting...',
+    'card.locationOwner': 'Location provided by owner',
+    'card.by': 'by',
+    'card.anonymousUser': 'Anonymous User',
+    'card.viewDetails': 'View Details',
+    'card.requestFoodPrompt': 'Request this food?',
+    'card.aboutToRequest': 'You are about to request "{{food}}" from {{provider}}. They will be notified.',
+    'card.confirmRequest': 'Confirm Request',
+    'card.cancel': 'Cancel',
+    'card.expiredDesc': 'This food has passed its best-before date and is no longer available.',
+    'card.edit': 'Edit',
+    'card.delete': 'Delete',
+    'card.save': 'Save',
+    'profile.anonymousUser': 'Anonymous User',
+
+    // Requests Page
+    'requests.refresh': 'Refresh',
+    'statusTooltip.pending': 'Waiting for the provider to respond',
+    'statusTooltip.accepted': 'Your request has been accepted! Contact the provider.',
+    'statusTooltip.declined': 'Unfortunately, this request was declined.',
+    'statusTooltip.completed': 'Food has been collected successfully!',
+    'statusTooltip.collected': 'Food has been collected successfully!',
+    'statusTooltip.cancelled': 'This request was cancelled.',
+    'statusTooltip.expired': 'This request has expired.',
   },
   ta: {
     // Navigation
@@ -148,7 +272,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.managePosts': 'பதிவுகளை நிர்வகி',
     'nav.profile': 'சுயவிவரம் காட்டு',
     'nav.logout': 'வெளியேறு',
-    
+
     // Homepage
     'home.badge': 'உணவு வீணாவதை குறைக்கிறோம்',
     'home.title': 'நரிஷ்நெட்',
@@ -160,7 +284,7 @@ const translations: Record<Language, Record<string, string>> = {
     'home.whyNourishNet': 'ஏன் நரிஷ்நெட்?',
     'home.joinMovement': 'இன்றே இயக்கத்தில் சேருங்கள்',
     'home.joinSubtitle': 'மாற்றத்தை உருவாக்கும் சமூகத்தின் ஒரு பகுதியாக இருங்கள். உணவைப் பகிர்ந்து, வீணாவதைக் குறைத்து, உங்கள் அண்டை வீட்டாருக்கு உதவுங்கள்.',
-    
+
     // Stats
     'stats.communityMembers': 'சமூக உறுப்பினர்கள்',
     'stats.foodItemsShared': 'பகிரப்பட்ட உணவுகள்',
@@ -168,7 +292,7 @@ const translations: Record<Language, Record<string, string>> = {
     'stats.requestsFulfilled': 'நிறைவேற்றப்பட்ட கோரிக்கைகள்',
     'stats.impact': 'உண்மையான தாக்கத்தை உருவாக்குகிறோம்',
     'stats.impactSubtitle': 'உணவு வீணாவதைக் குறைக்கவும் தேவையானவர்களுக்கு உதவவும் எங்கள் சமூகம் தீவிரமாக ஒன்றிணைந்து செயல்படுகிறது.',
-    
+
     // Features
     'features.howItWorks': 'நரிஷ்நெட் எப்படி செயல்படுகிறது',
     'features.howItWorksSubtitle': 'உங்கள் சமூகத்தில் எளிய, பாதுகாப்பான மற்றும் நிலையான உணவு பகிர்வு.',
@@ -178,11 +302,11 @@ const translations: Record<Language, Record<string, string>> = {
     'features.communityNetworkDesc': 'உணவு வீணாவதைக் குறைக்க அக்கறை கொள்ளும் சரிபார்க்கப்பட்ட சமூக உறுப்பினர்களுடன் இணையுங்கள்.',
     'features.smartMatching': 'ஸ்மார்ட் பொருத்தம்',
     'features.smartMatchingDesc': 'மேம்பட்ட வடிகட்டிகள் உங்களுக்குத் தேவையானதைக் கண்டறிய அல்லது நீங்கள் வைத்திருப்பதைப் பகிர உதவுகின்றன.',
-    
+
     // Problem Section
     'problem.title': 'பிரச்சனை – உணவு வீணாக்கம் ஒரு உலகளாவிய நெருக்கடி',
     'problem.subtitle': 'ஒவ்வொரு ஆண்டும், பில்லியன் கணக்கான டன் நல்ல உணவு குப்பைத் தொட்டியில் முடிகிறது, மில்லியன் கணக்கானோர் பசியுடன் இருக்கிறார்கள்.',
-    
+
     // Solution Section
     'solution.title': 'தீர்வு',
     'solution.subtitle': 'நரிஷ்நெட் சமூகம் இயக்கும் தளத்தின் மூலம் உணவு நன்கொடையாளர்களை தேவையானவர்களுடன் இணைக்கிறது.',
@@ -192,7 +316,7 @@ const translations: Record<Language, Record<string, string>> = {
     'solution.requestConnectDesc': 'அருகிலுள்ள உணவைக் கண்டுபிடித்து பாதுகாப்பாக தொடர்பு கொள்ளுங்கள்.',
     'solution.trackImpact': 'தாக்கத்தைக் கண்காணி',
     'solution.trackImpactDesc': 'சேமிக்கப்பட்ட உணவுகள் மற்றும் குறைக்கப்பட்ட வீணாக்கத்தைப் பாருங்கள்.',
-    
+
     // Platform Features
     'platform.title': 'தள அம்சங்கள்',
     'platform.subtitle': 'பாதுகாப்பான மற்றும் தாக்கமான உணவு பகிர்வுக்கு நவீன தொழில்நுட்பத்துடன் கட்டப்பட்டது.',
@@ -202,7 +326,7 @@ const translations: Record<Language, Record<string, string>> = {
     'platform.verifiedCommunityDesc': 'நம்பிக்கைக்கான மதிப்பீடுகள் மற்றும் விமர்சனங்கள்.',
     'platform.sustainabilityTracking': 'நிலைத்தன்மை கண்காணிப்பு',
     'platform.sustainabilityTrackingDesc': 'சேமிக்கப்பட்ட உணவுகள் மற்றும் தாக்கத்தைக் கண்காணிக்கவும்.',
-    
+
     // Requests
     'requests.incoming': 'வரும் கோரிக்கைகள்',
     'requests.outgoing': 'எனது கோரிக்கைகள்',
@@ -216,7 +340,7 @@ const translations: Record<Language, Record<string, string>> = {
     'requests.markedClaimed': 'உரிமை கோரப்பட்டது',
     'requests.finished': 'முடிந்தது',
     'requests.awaitingPickup': 'எடுக்க காத்திருக்கிறது',
-    
+
     // Common
     'common.loading': 'ஏற்றுகிறது...',
     'common.error': 'பிழை',
@@ -234,7 +358,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.sort': 'வரிசைப்படுத்து',
     'common.noResults': 'முடிவுகள் இல்லை',
     'common.backToTop': 'மேலே செல்',
-    
+
     // Dashboard
     'dashboard.title': 'உங்கள் அருகிலுள்ள உணவு',
     'dashboard.subtitle': 'உங்கள் சமூகத்தில் கிடைக்கும் உணவைக் கண்டறியுங்கள்',
@@ -250,19 +374,137 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.allCategories': 'அனைத்து வகைகள்',
     'dashboard.allCuisines': 'அனைத்து உணவு வகைகள்',
     'dashboard.allTags': 'அனைத்து குறிச்சொற்கள்',
-    
+
     // Footer
     'footer.tagline': 'உணவைப் பகிர், வீணாக்கத்தைக் குறை, சமூகத்தை ஊட்டு.',
     'footer.privacy': 'தனியுரிமை',
     'footer.terms': 'விதிமுறைகள்',
     'footer.contact': 'தொடர்பு',
     'footer.rights': 'அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.',
-    
+
     // Language
     'language.english': 'English',
     'language.tamil': 'தமிழ்',
     'language.hindi': 'हिंदी',
+    'language.telugu': 'తెలుగు',
+    'language.bengali': 'বাংলা',
     'language.select': 'மொழியைத் தேர்ந்தெடு',
+
+    // Health Advisor
+    'healthAdvisor.title': 'AI சுகாதார ஆலோசகர்',
+    'healthAdvisor.desc': 'உணவு படங்களிலிருந்து உடனடி AI-இயக்கப்படும் சுகாதார நுண்ணறிவுகளைப் பெறுங்கள்.',
+    'healthAdvisor.upload': 'உணவு படங்களை பதிவேற்றுங்கள்',
+    'healthAdvisor.uploadDesc': 'பகுப்பாய்வு செய்ய உணவின் புகைப்படம் எடுக்கவும் (அதிகபட்சம் 3)',
+    'healthAdvisor.analyzing': 'பகுப்பாய்வு செய்யப்படுகிறது...',
+    'healthAdvisor.analyze': 'சுகாதார ஆபத்தை பகுப்பாய்வு செய்',
+    'healthAdvisor.results': 'சுகாதார பகுப்பாய்வு முடிவுகள்',
+    'healthAdvisor.analyzingRisks': 'சுகாதார ஆபத்துகளை பகுப்பாய்வு செய்கிறது...',
+    'healthAdvisor.aiEvaluating': 'AI ஊட்டச்சத்து மற்றும் சுகாதார தரவை மதிப்பிடுகிறது',
+    'healthAdvisor.diabeticRisk': 'நீரிழிவு ஆபத்து',
+    'healthAdvisor.cholesterolImpact': 'கொழுப்பு தாக்கம்',
+    'healthAdvisor.weightGain': 'எடை அதிகரிப்பு திறன்',
+    'healthAdvisor.aiSuggestion': 'AI பரிந்துரை',
+    'healthAdvisor.disclaimer': 'AI-உருவாக்கப்பட்ட நுண்ணறிவுகள். மருத்துவ நோயறிதல் அல்ல.',
+    'postFood.foodDetails': 'உணவு விவரங்கள்',
+    'postFood.foodDetailsDesc': 'நீங்கள் பகிர விரும்பும் உணவு பற்றிய தகவலை வழங்கவும்',
+    'postFood.foodTitle': 'உணவு தலைப்பு',
+    'postFood.description': 'விளக்கம்',
+    'postFood.foodCategory': 'உணவு வகை',
+    'postFood.selectCategory': 'உணவு வகையைத் தேர்ந்தெடுக்கவும்',
+    'postFood.cuisineType': 'சமையல் வகை',
+    'postFood.selectCuisine': 'சமையல் வகையைத் தேர்ந்தெடுக்கவும்',
+    'postFood.pickupLocation': 'எடுக்கும் இடம்',
+    'postFood.useCurrentLocation': 'தற்போதைய இடத்தைப் பயன்படுத்து',
+    'postFood.locating': 'கண்டறிகிறது...',
+    'postFood.latitude': 'அட்சரேகை',
+    'postFood.longitude': 'தீர்க்கரேகை',
+    'postFood.tags': 'குறிச்சொற்கள்',
+    'postFood.tagsDesc': 'உங்கள் உணவை விவரிக்கும் குறிச்சொற்களைத் தேர்ந்தெடுக்கவும்',
+    'postFood.foodImages': 'உணவு படங்கள் (3 வரை)',
+    'postFood.bestBefore': 'சிறந்த தேதி',
+    'postFood.selectDate': 'சிறந்த தேதி & நேரத்தைத் தேர்ந்தெடுக்கவும்',
+    'postFood.shareFood': 'சமூகத்துடன் உணவைப் பகிர்',
+    'postFood.sharing': 'பகிர்கிறது...',
+    'postFood.completeProfile': 'முதலில் உங்கள் சுயவிவரத்தை முடிக்கவும்',
+    'postFood.completeProfileDesc': 'உணவைப் பகிர்வதற்கு முன் உங்கள் சுயவிவரத்தை முடிக்கவும்.',
+    'postFood.completeProfileBtn': 'சுயவிவரத்தை முடிக்கவும்',
+    'postFood.coordinates': 'ஆயத்தொலைவுகள்',
+    'postFood.locationHelp': 'உங்கள் தற்போதைய இடத்தை பயன்படுத்தவும் அல்லது விரிவான முகவரியை உள்ளிடவும்.',
+    'managePosts.posted': 'பதிவிடப்பட்டது',
+    'managePosts.noPostsYet': 'இன்னும் பதிவுகள் இல்லை',
+    'managePosts.startSharing': 'உங்கள் சமூகத்துடன் உணவைப் பகிரத் தொடங்குங்கள்.',
+    'managePosts.editPost': 'உணவு பதிவைத் திருத்து',
+    'managePosts.editPostDesc': 'நீங்கள் இடத்தை மட்டும் புதுப்பிக்கலாம்.',
+    'managePosts.foodImage': 'உணவு படம்',
+    'managePosts.viewFullImage': 'முழு படத்தைக் காட்டு',
+    'managePosts.noImage': 'படம் இல்லை',
+    'managePosts.noImageAvailable': 'படம் இல்லை',
+    'managePosts.location': 'இடம் (திருத்தக்கூடியது)',
+    'managePosts.enterLocation': 'உங்கள் இடத்தை உள்ளிடவும்',
+    'managePosts.useCurrent': 'தற்போது பயன்படுத்து',
+    'managePosts.getting': 'பெறுகிறது...',
+    'managePosts.saving': 'சேமிக்கிறது...',
+    'managePosts.updateLocation': 'இடத்தைப் புதுப்பி',
+    'managePosts.deletePost': 'பதிவை நீக்கு',
+    'managePosts.deleteConfirm': 'உறுதியாக? இது தீர்க்கமுடியாதது.',
+    'managePosts.bestBefore': 'சிறந்த தேதி',
+    'managePosts.close': 'மூடு',
+    'profile.name': 'பெயர்',
+    'profile.bio': 'சுயகுறிப்பு',
+    'profile.location': 'இடம்/முகவரி',
+    'profile.phone': 'தொலைபேசி எண்',
+    'profile.whatsapp': 'வாட்ஸ்அப் எண்',
+    'profile.editProfile': 'சுயவிவரத்தைத் திருத்து',
+    'profile.save': 'சேமி',
+    'profile.saving': 'சேமிக்கிறது...',
+    'profile.myFoodPosts': 'எனது உணவு பதிவுகள்',
+    'profile.noPostsYet': 'இன்னும் உணவு பதிவுகள் இல்லை',
+    'profile.startSharing': 'உங்கள் சமூகத்துடன் உணவைப் பகிரத் தொடங்குங்கள்',
+    'profile.shareFood': 'உணவு பகிர்',
+    'profile.postedOn': 'பதிவிடப்பட்டது',
+    'profile.markTaken': 'எடுக்கப்பட்டதாக குறி',
+    'profile.markAvailable': 'கிடைக்கும் என குறி',
+
+    // Cards & Time formatting
+    'time.justNow': 'இப்போது',
+    'time.hoursAgo': 'மணிநேரங்களுக்கு முன்',
+    'time.daysAgo': 'நாட்களுக்கு முன்',
+    'status.available': 'கிடைக்கிறது',
+    'status.requested': 'கோரப்பட்டுள்ளது',
+    'status.reserved': 'ஒதுக்கப்பட்டுள்ளது',
+    'status.completed': 'முடிந்தது',
+    'status.expired': 'காலாவதியானது',
+    'status.collected': 'சேகரிக்கப்பட்டது',
+    'status.pending': 'நிலுவையில் உள்ளது',
+    'status.accepted': 'ஏற்கப்பட்டது',
+    'status.declined': 'நிராகரிக்கப்பட்டது',
+    'status.cancelled': 'ரத்து செய்யப்பட்டது',
+    'card.request': 'கோரிக்கை விடுக்க',
+    'card.requesting': 'கோருகிறது...',
+    'card.locationOwner': 'உரிமையாளரால் வழங்கப்பட்ட இடம்',
+    'card.by': 'மூலம்',
+    'card.anonymousUser': 'அநாமதேய பயனர்',
+    'card.viewDetails': 'விவரங்களை காண்க',
+    'card.requestFoodPrompt': 'இந்த உணவைக் கோர வேண்டுமா?',
+    'card.aboutToRequest': 'நீங்கள் "{{food}}" ஐ {{provider}} இடமிருந்து கோர உள்ளீர்கள். அவர்களுக்கு அறிவிக்கப்படும்.',
+    'card.confirmRequest': 'கோரிக்கையை உறுதிப்படுத்துக',
+    'card.cancel': 'ரத்து செய்',
+    'card.expiredDesc': 'இந்த உணவின் சிறப்பான தேதி முடிந்துவிட்டது, இனி கிடைக்காது.',
+    'card.edit': 'திருத்து',
+    'card.delete': 'அழி',
+    'card.save': 'சேமி',
+    'profile.anonymousUser': 'அநாமதேய பயனர்',
+
+    // Requests Page
+    'requests.refresh': 'புதுப்பிக்கவும்',
+    'statusTooltip.pending': 'உணவு வழங்குபவர் பதிலளிக்க காத்திருக்கிறது',
+    'statusTooltip.accepted': 'உங்கள் கோரிக்கை ஏற்கப்பட்டது! வழங்குபவரை தொடர்பு கொள்ளவும்.',
+    'statusTooltip.declined': 'துரதிர்ஷ்டவசமாக, இந்த கோரிக்கை நிராகரிக்கப்பட்டது.',
+    'statusTooltip.completed': 'உணவு வெற்றிகரமாக சேகரிக்கப்பட்டது!',
+    'statusTooltip.collected': 'உணவு வெற்றிகரமாக சேகரிக்கப்பட்டது!',
+    'statusTooltip.cancelled': 'இந்த கோரிக்கை ரத்து செய்யப்பட்டது.',
+    'statusTooltip.expired': 'இந்த கோரிக்கை காலாவதியானது.',
+    'footer.credit': 'Sanjay Dharmarajou இன் தயாரிப்பு',
   },
   hi: {
     // Navigation
@@ -272,7 +514,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.managePosts': 'पोस्ट प्रबंधित करें',
     'nav.profile': 'प्रोफाइल दिखाएं',
     'nav.logout': 'लॉग आउट',
-    
+
     // Homepage
     'home.badge': 'मिलकर भोजन की बर्बादी कम करें',
     'home.title': 'नरिशनेट',
@@ -284,7 +526,7 @@ const translations: Record<Language, Record<string, string>> = {
     'home.whyNourishNet': 'नरिशनेट क्यों?',
     'home.joinMovement': 'आज ही आंदोलन में शामिल हों',
     'home.joinSubtitle': 'बदलाव लाने वाले समुदाय का हिस्सा बनें। भोजन साझा करें, बर्बादी कम करें और अपने पड़ोसियों की मदद करें।',
-    
+
     // Stats
     'stats.communityMembers': 'समुदाय के सदस्य',
     'stats.foodItemsShared': 'साझा किए गए भोजन',
@@ -292,7 +534,7 @@ const translations: Record<Language, Record<string, string>> = {
     'stats.requestsFulfilled': 'पूर्ण किए गए अनुरोध',
     'stats.impact': 'वास्तविक प्रभाव बना रहे हैं',
     'stats.impactSubtitle': 'हमारा समुदाय भोजन की बर्बादी कम करने और जरूरतमंदों की मदद के लिए सक्रिय रूप से मिलकर काम कर रहा है।',
-    
+
     // Features
     'features.howItWorks': 'नरिशनेट कैसे काम करता है',
     'features.howItWorksSubtitle': 'आपके समुदाय में सरल, सुरक्षित और टिकाऊ भोजन साझाकरण।',
@@ -302,11 +544,11 @@ const translations: Record<Language, Record<string, string>> = {
     'features.communityNetworkDesc': 'भोजन की बर्बादी कम करने की परवाह करने वाले सत्यापित समुदाय सदस्यों से जुड़ें।',
     'features.smartMatching': 'स्मार्ट मिलान',
     'features.smartMatchingDesc': 'उन्नत फ़िल्टर आपको वह खोजने में मदद करते हैं जो आपको चाहिए या जो आपके पास है उसे साझा करने में।',
-    
+
     // Problem Section
     'problem.title': 'समस्या – भोजन की बर्बादी एक वैश्विक संकट है',
     'problem.subtitle': 'हर साल, अरबों टन अच्छा भोजन कूड़ेदान में जाता है जबकि लाखों लोग भूखे रहते हैं।',
-    
+
     // Solution Section
     'solution.title': 'समाधान',
     'solution.subtitle': 'नरिशनेट समुदाय-संचालित मंच के माध्यम से भोजन दाताओं को जरूरतमंदों से जोड़ता है।',
@@ -316,7 +558,7 @@ const translations: Record<Language, Record<string, string>> = {
     'solution.requestConnectDesc': 'पास का भोजन खोजें और सुरक्षित रूप से संपर्क करें।',
     'solution.trackImpact': 'प्रभाव ट्रैक करें',
     'solution.trackImpactDesc': 'बचाए गए भोजन और कम हुई बर्बादी देखें।',
-    
+
     // Platform Features
     'platform.title': 'प्लेटफॉर्म सुविधाएं',
     'platform.subtitle': 'सुरक्षित और प्रभावी भोजन साझाकरण के लिए आधुनिक तकनीक से निर्मित।',
@@ -326,7 +568,7 @@ const translations: Record<Language, Record<string, string>> = {
     'platform.verifiedCommunityDesc': 'विश्वास के लिए रेटिंग और समीक्षाएं।',
     'platform.sustainabilityTracking': 'स्थिरता ट्रैकिंग',
     'platform.sustainabilityTrackingDesc': 'बचाए गए भोजन और प्रभाव की निगरानी करें।',
-    
+
     // Requests
     'requests.incoming': 'आने वाले अनुरोध',
     'requests.outgoing': 'मेरे अनुरोध',
@@ -340,7 +582,7 @@ const translations: Record<Language, Record<string, string>> = {
     'requests.markedClaimed': 'दावा किया गया',
     'requests.finished': 'समाप्त',
     'requests.awaitingPickup': 'पिकअप की प्रतीक्षा',
-    
+
     // Common
     'common.loading': 'लोड हो रहा है...',
     'common.error': 'त्रुटि',
@@ -358,7 +600,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.sort': 'क्रमबद्ध',
     'common.noResults': 'कोई परिणाम नहीं मिला',
     'common.backToTop': 'ऊपर जाएं',
-    
+
     // Dashboard
     'dashboard.title': 'आपके पास का भोजन',
     'dashboard.subtitle': 'अपने समुदाय में उपलब्ध भोजन खोजें',
@@ -374,20 +616,622 @@ const translations: Record<Language, Record<string, string>> = {
     'dashboard.allCategories': 'सभी श्रेणियां',
     'dashboard.allCuisines': 'सभी व्यंजन',
     'dashboard.allTags': 'सभी टैग',
-    
+
     // Footer
     'footer.tagline': 'भोजन साझा करें, बर्बादी कम करें, समुदाय को पोषण दें।',
     'footer.privacy': 'गोपनीयता',
     'footer.terms': 'शर्तें',
     'footer.contact': 'संपर्क',
     'footer.rights': 'सर्वाधिकार सुरक्षित।',
-    
+
     // Language
     'language.english': 'English',
     'language.tamil': 'தமிழ்',
     'language.hindi': 'हिंदी',
+    'language.telugu': 'తెలుగు',
+    'language.bengali': 'বাংলা',
     'language.select': 'भाषा चुनें',
-  }
+
+    // Health Advisor
+    'healthAdvisor.title': 'AI स्वास्थ्य सलाहकार',
+    'healthAdvisor.desc': 'भोजन की तस्वीरों से तुरंत AI-संचालित स्वास्थ्य जानकारी प्राप्त करें।',
+    'healthAdvisor.upload': 'भोजन की तस्वीरें अपलोड करें',
+    'healthAdvisor.uploadDesc': 'विश्लेषण के लिए भोजन की तस्वीर लें (अधिकतम 3)',
+    'healthAdvisor.analyzing': 'विश्लेषण हो रहा है...',
+    'healthAdvisor.analyze': 'स्वास्थ्य जोखिम का विश्लेषण करें',
+    'healthAdvisor.results': 'स्वास्थ्य विश्लेषण परिणाम',
+    'healthAdvisor.analyzingRisks': 'स्वास्थ्य जोखिमों का विश्लेषण हो रहा है...',
+    'healthAdvisor.aiEvaluating': 'AI पोषण और स्वास्थ्य डेटा का मूल्यांकन कर रहा है',
+    'healthAdvisor.diabeticRisk': 'मधुमेह जोखिम',
+    'healthAdvisor.cholesterolImpact': 'कोलेस्ट्रॉल प्रभाव',
+    'healthAdvisor.weightGain': 'वजन बढ़ने की संभावना',
+    'healthAdvisor.aiSuggestion': 'AI सुझाव',
+    'healthAdvisor.disclaimer': 'AI-जनित अंतर्दृष्टि। चिकित्सा निदान नहीं।',
+    'postFood.foodDetails': 'भोजन विवरण',
+    'postFood.foodDetailsDesc': 'आप जो भोजन साझा करना चाहते हैं उसके बारे में जानकारी दें',
+    'postFood.foodTitle': 'भोजन का शीर्षक',
+    'postFood.description': 'विवरण',
+    'postFood.foodCategory': 'भोजन श्रेणी',
+    'postFood.selectCategory': 'भोजन श्रेणी चुनें',
+    'postFood.cuisineType': 'व्यंजन प्रकार',
+    'postFood.selectCuisine': 'व्यंजन प्रकार चुनें',
+    'postFood.pickupLocation': 'पिकअप स्थान',
+    'postFood.useCurrentLocation': 'वर्तमान स्थान का उपयोग करें',
+    'postFood.locating': 'ढूंढ रहा है...',
+    'postFood.latitude': 'अक्षांश',
+    'postFood.longitude': 'देशांतर',
+    'postFood.tags': 'टैग',
+    'postFood.tagsDesc': 'अपने भोजन का वर्णन करने वाले टैग चुनें',
+    'postFood.foodImages': 'भोजन की तस्वीरें (3 तक)',
+    'postFood.bestBefore': 'सर्वोत्तम तिथि',
+    'postFood.selectDate': 'सर्वोत्तम तिथि और समय चुनें',
+    'postFood.shareFood': 'समुदाय के साथ भोजन साझा करें',
+    'postFood.sharing': 'साझा कर रहा है...',
+    'postFood.completeProfile': 'पहले अपनी प्रोफाइल पूरी करें',
+    'postFood.completeProfileDesc': 'भोजन साझा करने से पहले कृपया अपनी प्रोफाइल पूरी करें।',
+    'postFood.completeProfileBtn': 'प्रोफाइल पूरी करें',
+    'postFood.coordinates': 'निर्देशांक',
+    'postFood.locationHelp': 'अपना वर्तमान स्थान उपयोग करें या विस्तृत पता दर्ज करें।',
+    'managePosts.posted': 'पोस्ट किया',
+    'managePosts.noPostsYet': 'अभी तक कोई पोस्ट नहीं',
+    'managePosts.startSharing': 'अपने समुदाय के साथ भोजन साझा करना शुरू करें।',
+    'managePosts.editPost': 'भोजन पोस्ट संपादित करें',
+    'managePosts.editPostDesc': 'आप केवल स्थान अपडेट कर सकते हैं।',
+    'managePosts.foodImage': 'भोजन की तस्वीर',
+    'managePosts.viewFullImage': 'पूरी तस्वीर देखें',
+    'managePosts.noImage': 'तस्वीर नहीं',
+    'managePosts.noImageAvailable': 'तस्वीर उपलब्ध नहीं',
+    'managePosts.location': 'स्थान (संपादन योग्य)',
+    'managePosts.enterLocation': 'अपना स्थान दर्ज करें',
+    'managePosts.useCurrent': 'वर्तमान उपयोग',
+    'managePosts.getting': 'प्राप्त कर रहा...',
+    'managePosts.saving': 'सहेज रहा है...',
+    'managePosts.updateLocation': 'स्थान अपडेट करें',
+    'managePosts.deletePost': 'पोस्ट हटाएं',
+    'managePosts.deleteConfirm': 'क्या आप निश्चित हैं? यह पूर्ववत नहीं किया जा सकता।',
+    'managePosts.bestBefore': 'सर्वोत्तम तिथि',
+    'managePosts.close': 'बंद करें',
+    'profile.name': 'नाम',
+    'profile.bio': 'परिचय',
+    'profile.location': 'स्थान/पता',
+    'profile.phone': 'फोन नंबर',
+    'profile.whatsapp': 'व्हाट्सएप नंबर',
+    'profile.editProfile': 'प्रोफाइल संपादित करें',
+    'profile.save': 'सहेजें',
+    'profile.saving': 'सहेज रहा है...',
+    'profile.myFoodPosts': 'मेरी भोजन पोस्ट',
+    'profile.noPostsYet': 'अभी तक कोई भोजन पोस्ट नहीं',
+    'profile.startSharing': 'अपने समुदाय के साथ भोजन साझा करना शुरू करें',
+    'profile.shareFood': 'भोजन साझा करें',
+    'profile.postedOn': 'पोस्ट किया',
+    'profile.markTaken': 'ली गई के रूप में चिह्नित करें',
+    'profile.markAvailable': 'उपलब्ध चिह्नित करें',
+
+    // Cards & Time formatting
+    'time.justNow': 'अभी अभी',
+    'time.hoursAgo': 'घंटे पहले',
+    'time.daysAgo': 'दिन पहले',
+    'status.available': 'उपलब्ध',
+    'status.requested': 'अनुरोध किया गया',
+    'status.reserved': 'आरक्षित',
+    'status.completed': 'पूरा हुआ',
+    'status.expired': 'समाप्त',
+    'status.collected': 'एकत्रित',
+    'status.pending': 'लंबित',
+    'status.accepted': 'स्वीकार किया गया',
+    'status.declined': 'अस्वीकृत',
+    'status.cancelled': 'रद्द किया गया',
+    'card.request': 'अनुरोध करें',
+    'card.requesting': 'अनुरोध कर रहा है...',
+    'card.locationOwner': 'मालिक द्वारा प्रदान किया गया स्थान',
+    'card.by': 'द्वारा',
+    'card.anonymousUser': 'अनाम उपयोगकर्ता',
+    'card.viewDetails': 'विवरण देखें',
+    'card.requestFoodPrompt': 'क्या इस भोजन का अनुरोध करें?',
+    'card.aboutToRequest': 'आप {{provider}} से "{{food}}" का अनुरोध करने वाले हैं। उन्हें सूचित किया जाएगा।',
+    'card.confirmRequest': 'अनुरोध की पुष्टि करें',
+    'card.cancel': 'रद्द करें',
+    'card.expiredDesc': 'यह भोजन अपनी सर्वोत्तम तिथि पार कर चुका है और अब उपलब्ध नहीं है।',
+    'card.edit': 'संपादित करें',
+    'card.delete': 'हटाएं',
+    'card.save': 'सहेजें',
+    'profile.anonymousUser': 'गुमनाम उपयोगकर्ता',
+
+    // Requests Page
+    'requests.refresh': 'रिफ्रेश करें',
+    'statusTooltip.pending': 'प्रदाता के जवाब की प्रतीक्षा में',
+    'statusTooltip.accepted': 'आपका अनुरोध स्वीकार कर लिया गया है! प्रदाता से संपर्क करें।',
+    'statusTooltip.declined': 'दुर्भाग्य से, यह अनुरोध अस्वीकार कर दिया गया था।',
+    'statusTooltip.completed': 'भोजन सफलतापूर्वक एकत्र किया गया!',
+    'statusTooltip.collected': 'भोजन सफलतापूर्वक एकत्र किया गया!',
+    'statusTooltip.cancelled': 'यह अनुरोध रद्द कर दिया गया था।',
+    'statusTooltip.expired': 'यह अनुरोध समाप्त हो गया है।',
+    'footer.credit': 'Sanjay Dharmarajou द्वारा निर्मित',
+  },
+  te: {
+    // Navigation
+    'nav.dashboard': 'డాష్‌బోర్డ్',
+    'nav.requests': 'అభ్యర్థనలు',
+    'nav.addFood': 'ఆహారం జోడించు',
+    'nav.managePosts': 'పోస్ట్‌లు నిర్వహించు',
+    'nav.profile': 'ప్రొఫైల్ చూడు',
+    'nav.logout': 'లాగ్ అవుట్',
+
+    // Homepage
+    'home.badge': 'కలిసి ఆహార వృథాను తగ్గిద్దాం',
+    'home.title': 'నరిష్‌నెట్',
+    'home.subtitle': 'మీ సమాజంతో కలిసి అదనపు ఆహారాన్ని పంచుకోండి, వృథాను తగ్గించండి మరియు అవసరమైనవారికి పోషణ అందించండి.',
+    'home.getStarted': 'ప్రారంభించు',
+    'home.viewDashboard': 'డాష్‌బోర్డ్ చూడు',
+    'home.learnMore': 'మరింత తెలుసుకోండి',
+    'home.shareFoodNow': 'ఇప్పుడే ఆహారం పంచుకోండి',
+    'home.whyNourishNet': 'నరిష్‌నెట్ ఎందుకు?',
+    'home.joinMovement': 'ఈరోజే ఉద్యమంలో చేరండి',
+    'home.joinSubtitle': 'మార్పు తీసుకొచ్చే సమాజంలో భాగం కండి. ఆహారం పంచుకోండి, వృథాను తగ్గించండి.',
+
+    // Stats
+    'stats.communityMembers': 'సమాజ సభ్యులు',
+    'stats.foodItemsShared': 'పంచుకున్న ఆహార వస్తువులు',
+    'stats.mealsRescued': 'కాపాడిన భోజనాలు',
+    'stats.requestsFulfilled': 'నెరవేర్చిన అభ్యర్థనలు',
+    'stats.impact': 'నిజమైన ప్రభావం చూపుతున్నాం',
+    'stats.impactSubtitle': 'ఆహార వృథాను తగ్గించడానికి మరియు అవసరమైనవారికి సహాయం చేయడానికి మా సమాజం కలిసి పనిచేస్తోంది.',
+
+    // Features
+    'features.howItWorks': 'నరిష్‌నెట్ ఎలా పనిచేస్తుంది',
+    'features.howItWorksSubtitle': 'మీ సమాజంలో సరళమైన, సురక్షితమైన మరియు స్థిరమైన ఆహార భాగస్వామ్యం.',
+    'features.locationBased': 'లొకేషన్ ఆధారిత భాగస్వామ్యం',
+    'features.locationBasedDesc': 'ఖచ్చితమైన లొకేషన్ ట్రాకింగ్‌తో మీ పరిసరాల్లో ఆహారాన్ని కనుగొనండి.',
+    'features.communityNetwork': 'సమాజ నెట్‌వర్క్',
+    'features.communityNetworkDesc': 'ఆహార వృథాను తగ్గించే ధృవీకరించబడిన సమాజ సభ్యులతో అనుసంధానం.',
+    'features.smartMatching': 'స్మార్ట్ మ్యాచింగ్',
+    'features.smartMatchingDesc': 'అధునాతన ఫిల్టర్లు మీకు కావలసింది కనుగొనడంలో సహాయపడతాయి.',
+
+    // Problem Section
+    'problem.title': 'సమస్య – ఆహార వృథా ఒక ప్రపంచ సంక్షోభం',
+    'problem.subtitle': 'ప్రతి సంవత్సరం, బిలియన్ల టన్నుల మంచి ఆహారం చెత్తలో పడిపోతుంది.',
+
+    // Solution Section
+    'solution.title': 'పరిష్కారం',
+    'solution.subtitle': 'నరిష్‌నెట్ సమాజ-ఆధారిత వేదిక ద్వారా ఆహార దాతలను అవసరమైనవారితో అనుసంధానం చేస్తుంది.',
+    'solution.postSurplus': 'అదనపు ఆహారాన్ని పోస్ట్ చేయండి',
+    'solution.postSurplusDesc': 'ఇళ్ళు, రెస్టారెంట్లు లేదా ఈవెంట్ల నుండి అదనపు ఆహారాన్ని పంచుకోండి.',
+    'solution.requestConnect': 'అభ్యర్థన & కనెక్ట్',
+    'solution.requestConnectDesc': 'సమీపంలో ఆహారాన్ని కనుగొని సురక్షితంగా సంప్రదించండి.',
+    'solution.trackImpact': 'ప్రభావాన్ని ట్రాక్ చేయండి',
+    'solution.trackImpactDesc': 'కాపాడిన భోజనాలు మరియు తగ్గించిన వృథాను చూడండి.',
+
+    // Platform Features
+    'platform.title': 'ప్లాట్‌ఫారం ఫీచర్లు',
+    'platform.subtitle': 'సురక్షితమైన మరియు ప్రభావవంతమైన ఆహార భాగస్వామ్యం కోసం ఆధునిక సాంకేతికతతో నిర్మించబడింది.',
+    'platform.locationDiscovery': 'లొకేషన్ ఆధారిత కనుగొలు',
+    'platform.locationDiscoveryDesc': 'GPS-ఆధారిత సమీప ఆహార శోధన.',
+    'platform.verifiedCommunity': 'ధృవీకరించబడిన సమాజం',
+    'platform.verifiedCommunityDesc': 'నమ్మకం కోసం రేటింగ్‌లు మరియు సమీక్షలు.',
+    'platform.sustainabilityTracking': 'సుస్థిరత ట్రాకింగ్',
+    'platform.sustainabilityTrackingDesc': 'కాపాడిన భోజనాలు మరియు ప్రభావాన్ని పర్యవేక్షించండి.',
+
+    // Requests
+    'requests.incoming': 'వచ్చిన అభ్యర్థనలు',
+    'requests.outgoing': 'నా అభ్యర్థనలు',
+    'requests.pending': 'పెండింగ్',
+    'requests.accepted': 'ఆమోదించబడింది',
+    'requests.declined': 'తిరస్కరించబడింది',
+    'requests.completed': 'సేకరించబడింది',
+    'requests.cancelled': 'రద్దు చేయబడింది',
+    'requests.expired': 'గడువు ముగిసింది',
+    'requests.markCollected': 'సేకరించినట్లు గుర్తించు',
+    'requests.markedClaimed': 'క్లెయిమ్ చేయబడింది',
+    'requests.finished': 'పూర్తయింది',
+    'requests.awaitingPickup': 'పికప్ కోసం వేచి ఉంది',
+
+    // Common
+    'common.loading': 'లోడ్ అవుతోంది...',
+    'common.error': 'లోపం',
+    'common.success': 'విజయం',
+    'common.cancel': 'రద్దు',
+    'common.confirm': 'నిర్ధారించు',
+    'common.save': 'సేవ్',
+    'common.delete': 'తొలగించు',
+    'common.edit': 'సవరించు',
+    'common.back': 'వెనుకకు',
+    'common.next': 'తదుపరి',
+    'common.previous': 'మునుపటి',
+    'common.search': 'శోధించు',
+    'common.filter': 'ఫిల్టర్',
+    'common.sort': 'క్రమబద్ధీకరించు',
+    'common.noResults': 'ఫలితాలు లేవు',
+    'common.backToTop': 'పైకి వెళ్ళు',
+
+    // Dashboard
+    'dashboard.title': 'మీ సమీపంలో ఆహారం',
+    'dashboard.subtitle': 'మీ సమాజంలో అందుబాటులో ఉన్న ఆహారాన్ని కనుగొనండి',
+    'dashboard.searchPlaceholder': 'ఆహారం, ప్రదేశం శోధించండి...',
+    'dashboard.filters': 'ఫిల్టర్‌లు',
+    'dashboard.clearAll': 'అన్నీ క్లియర్ చేయి',
+    'dashboard.noFoodAvailable': 'సమీపంలో ఆహారం అందుబాటులో లేదు',
+    'dashboard.noFoodMatchingFilters': 'మీ ఫిల్టర్‌లకు సరిపోయే ఆహారం లేదు',
+    'dashboard.viewDetails': 'వివరాలు',
+    'dashboard.requestFood': 'అభ్యర్థన',
+    'dashboard.newest': 'కొత్తది',
+    'dashboard.nearest': 'సమీపంలో',
+    'dashboard.allCategories': 'అన్ని వర్గాలు',
+    'dashboard.allCuisines': 'అన్ని వంటకాలు',
+    'dashboard.allTags': 'అన్ని ట్యాగ్‌లు',
+
+    // Footer
+    'footer.tagline': 'ఆహారం పంచుకోండి, వృథా తగ్గించండి, సమాజాన్ని పోషించండి.',
+    'footer.privacy': 'గోప్యత',
+    'footer.terms': 'నిబంధనలు',
+    'footer.contact': 'సంప్రదించండి',
+    'footer.rights': 'అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి.',
+
+    // Language
+    'language.english': 'English',
+    'language.tamil': 'தமிழ்',
+    'language.hindi': 'हिंदी',
+    'language.telugu': 'తెలుగు',
+    'language.bengali': 'বাংলা',
+    'language.select': 'భాషను ఎంచుకోండి',
+
+    // Health Advisor
+    'healthAdvisor.title': 'AI ఆరోగ్య సలహాదారు',
+    'healthAdvisor.desc': 'ఆహార చిత్రాల నుండి తక్షణ AI-ఆధారిత ఆరోగ్య అంతర్దృష్టులు పొందండి.',
+    'healthAdvisor.upload': 'ఆహార చిత్రాలను అప్‌లోడ్ చేయండి',
+    'healthAdvisor.uploadDesc': 'విశ్లేషించడానికి ఆహార ఫోటో తీయండి (గరిష్టం 3)',
+    'healthAdvisor.analyzing': 'విశ్లేషిస్తోంది...',
+    'healthAdvisor.analyze': 'ఆరోగ్య ప్రమాదాన్ని విశ్లేషించండి',
+    'healthAdvisor.results': 'ఆరోగ్య విశ్లేషణ ఫలితాలు',
+    'healthAdvisor.analyzingRisks': 'ఆరోగ్య ప్రమాదాలను విశ్లేషిస్తోంది...',
+    'healthAdvisor.aiEvaluating': 'AI పోషక మరియు ఆరోగ్య డేటాను మూల్యాంకనం చేస్తోంది',
+    'healthAdvisor.diabeticRisk': 'డయాబెటిక్ ప్రమాదం',
+    'healthAdvisor.cholesterolImpact': 'కొలెస్ట్రాల్ ప్రభావం',
+    'healthAdvisor.weightGain': 'బరువు పెరుగుదల సామర్థ్యం',
+    'healthAdvisor.aiSuggestion': 'AI సూచన',
+    'healthAdvisor.disclaimer': 'AI-రూపొందించిన అంతర్దృష్టులు. వైద్య నిర్ధారణ కాదు.',
+    'postFood.foodDetails': 'ఆహార వివరాలు',
+    'postFood.foodDetailsDesc': 'మీరు పంచుకోవాలనుకుంటున్న ఆహారం గురించి సమాచారం అందించండి',
+    'postFood.foodTitle': 'ఆహార శీర్షిక',
+    'postFood.description': 'వివరణ',
+    'postFood.foodCategory': 'ఆహార వర్గం',
+    'postFood.selectCategory': 'ఆహార వర్గాన్ని ఎంచుకోండి',
+    'postFood.cuisineType': 'వంటకం రకం',
+    'postFood.selectCuisine': 'వంటకం రకాన్ని ఎంచుకోండి',
+    'postFood.pickupLocation': 'పికప్ స్థానం',
+    'postFood.useCurrentLocation': 'ప్రస్తుత స్థానం ఉపయోగించండి',
+    'postFood.locating': 'గుర్తిస్తోంది...',
+    'postFood.latitude': 'అక్షాంశం',
+    'postFood.longitude': 'రేఖాంశం',
+    'postFood.tags': 'ట్యాగ్‌లు',
+    'postFood.tagsDesc': 'మీ ఆహారాన్ని వివరించే ట్యాగ్‌లను ఎంచుకోండి',
+    'postFood.foodImages': 'ఆహార చిత్రాలు (3 వరకు)',
+    'postFood.bestBefore': 'ఉత్తమ తేదీ',
+    'postFood.selectDate': 'ఉత్తమ తేదీ & సమయం ఎంచుకోండి',
+    'postFood.shareFood': 'సమాజంతో ఆహారం పంచుకోండి',
+    'postFood.sharing': 'పంచుకుంటోంది...',
+    'postFood.completeProfile': 'మొదట మీ ప్రొఫైల్ పూర్తి చేయండి',
+    'postFood.completeProfileDesc': 'ఆహారం పంచుకోవడానికి ముందు దయచేసి మీ ప్రొఫైల్ పూర్తి చేయండి.',
+    'postFood.completeProfileBtn': 'ప్రొఫైల్ పూర్తి చేయండి',
+    'postFood.coordinates': 'కోఆర్డినేట్లు',
+    'postFood.locationHelp': 'మీ ప్రస్తుత స్థానం ఉపయోగించండి లేదా వివరమైన చిరునామా నమోదు చేయండి.',
+    'managePosts.posted': 'పోస్ట్ చేయబడింది',
+    'managePosts.noPostsYet': 'ఇంకా పోస్ట్‌లు లేవు',
+    'managePosts.startSharing': 'మీ సమాజంతో ఆహారం పంచుకోవడం ప్రారంభించండి.',
+    'managePosts.editPost': 'ఆహార పోస్ట్ సవరించు',
+    'managePosts.editPostDesc': 'మీరు స్థానాన్ని మాత్రమే అప్డేట్ చేయవచ్చు.',
+    'managePosts.foodImage': 'ఆహార చిత్రం',
+    'managePosts.viewFullImage': 'పూర్తి చిత్రం చూడండి',
+    'managePosts.noImage': 'చిత్రం లేదు',
+    'managePosts.noImageAvailable': 'చిత్రం అందుబాటులో లేదు',
+    'managePosts.location': 'స్థానం (సవరించగలది)',
+    'managePosts.enterLocation': 'మీ స్థానాన్ని నమోదు చేయండి',
+    'managePosts.useCurrent': 'ప్రస్తుతం ఉపయోగించు',
+    'managePosts.getting': 'పొందుతోంది...',
+    'managePosts.saving': 'సేవ్ చేస్తోంది...',
+    'managePosts.updateLocation': 'స్థానం అప్డేట్ చేయి',
+    'managePosts.deletePost': 'పోస్ట్ తొలగించు',
+    'managePosts.deleteConfirm': 'ఖచ్చితంగా? ఇది తిరిగి చేయలేరు.',
+    'managePosts.bestBefore': 'ఉత్తమ తేదీ',
+    'managePosts.close': 'మూసివేయి',
+    'profile.name': 'పేరు',
+    'profile.bio': 'బయో',
+    'profile.location': 'స్థానం/చిరునామా',
+    'profile.phone': 'ఫోన్ నంబర్',
+    'profile.whatsapp': 'వాట్సాప్ నంబర్',
+    'profile.editProfile': 'ప్రొఫైల్ సవరించు',
+    'profile.save': 'సేవ్',
+    'profile.saving': 'సేవ్ చేస్తోంది...',
+    'profile.myFoodPosts': 'నా ఆహార పోస్ట్‌లు',
+    'profile.noPostsYet': 'ఇంకా ఆహార పోస్ట్‌లు లేవు',
+    'profile.startSharing': 'మీ సమాజంతో ఆహారం పంచుకోవడం ప్రారంభించండి',
+    'profile.shareFood': 'ఆహారం పంచుకోండి',
+    'profile.postedOn': 'పోస్ట్ చేయబడింది',
+    'profile.markTaken': 'తీసుకున్నట్లు గుర్తించు',
+    'profile.markAvailable': 'అందుబాటులో గుర్తించు',
+
+    // Cards & Time formatting
+    'time.justNow': 'ఇప్పుడే',
+    'time.hoursAgo': 'గంటల క్రితం',
+    'time.daysAgo': 'రోజుల క్రితం',
+    'status.available': 'అందుబాటులో ఉంది',
+    'status.requested': 'అభ్యర్థించబడింది',
+    'status.reserved': 'రిజర్వ్ చేయబడింది',
+    'status.completed': 'పూర్తయింది',
+    'status.expired': 'గడువు ముగిసింది',
+    'status.collected': 'సేకరించబడింది',
+    'status.pending': 'పెండింగ్‌లో ఉంది',
+    'status.accepted': 'అంగీకరించబడింది',
+    'status.declined': 'తిరస్కరించబడింది',
+    'status.cancelled': 'రద్దు చేయబడింది',
+    'card.request': 'అభ్యర్థన చేయండి',
+    'card.requesting': 'అభ్యర్థిస్తోంది...',
+    'card.locationOwner': 'యజమాని అందించిన స్థానం',
+    'card.by': 'ద్వారా',
+    'card.anonymousUser': 'అనామక వినియోగదారు',
+    'card.viewDetails': 'వివరాలను వీక్షించండి',
+    'card.requestFoodPrompt': 'ఈ ఆహారాన్ని అభ్యర్థించాలా?',
+    'card.aboutToRequest': 'మీరు {{provider}} నుండి "{{food}}" కోసం అభ్యర్థన చేయబోతున్నారు. వారికి తెలియజేయబడుతుంది.',
+    'card.confirmRequest': 'అభ్యర్థనను నిర్ధారించండి',
+    'card.cancel': 'రద్దు చేయండి',
+    'card.expiredDesc': 'ఈ ఆహారం గడువు తేదీ దాటిపోయినందున ఇకపై అందుబాటులో లేదు.',
+    'card.edit': 'సవరించు',
+    'card.delete': 'తొలగించు',
+    'card.save': 'సేవ్ చేయండి',
+    'profile.anonymousUser': 'అనామక వినియోగదారు',
+
+    // Requests Page
+    'requests.refresh': 'రిఫ్రెష్ చేయండి',
+    'statusTooltip.pending': 'ప్రొవైడర్ స్పందించడానికి వేచి ఉంది',
+    'statusTooltip.accepted': 'మీ అభ్యర్థన ఆమోదించబడింది! ప్రొవైడర్‌ను సంప్రదించండి.',
+    'statusTooltip.declined': 'దురదృష్టవశాత్తు, ఈ అభ్యర్థన తిరస్కరించబడింది.',
+    'statusTooltip.completed': 'ఆహారం విజయవంతంగా సేకరించబడింది!',
+    'statusTooltip.collected': 'ఆహారం విజయవంతంగా సేకరించబడింది!',
+    'statusTooltip.cancelled': 'ఈ అభ్యర్థన రద్దు చేయబడింది.',
+    'statusTooltip.expired': 'ఈ అభ్యర్థన గడువు ముగిసింది.',
+    'footer.credit': 'Sanjay Dharmarajou యొక్క ఉత్పత్తి',
+  },
+  bn: {
+    // Navigation
+    'nav.dashboard': 'ড্যাশবোর্ড',
+    'nav.requests': 'অনুরোধ',
+    'nav.addFood': 'খাবার যোগ করুন',
+    'nav.managePosts': 'পোস্ট পরিচালনা',
+    'nav.profile': 'প্রোফাইল দেখুন',
+    'nav.logout': 'লগ আউট',
+
+    // Homepage
+    'home.badge': 'একসাথে খাদ্য অপচয় কমাই',
+    'home.title': 'নরিশনেট',
+    'home.subtitle': 'আপনার সম্প্রদায়ের সাথে সংযুক্ত হয়ে উদ্বৃত্ত খাবার ভাগ করুন, অপচয় কমান এবং অভাবীদের পুষ্টি দিন।',
+    'home.getStarted': 'শুরু করুন',
+    'home.viewDashboard': 'ড্যাশবোর্ড দেখুন',
+    'home.learnMore': 'আরও জানুন',
+    'home.shareFoodNow': 'এখনই খাবার ভাগ করুন',
+    'home.whyNourishNet': 'কেন নরিশনেট?',
+    'home.joinMovement': 'আজই আন্দোলনে যোগ দিন',
+    'home.joinSubtitle': 'পরিবর্তন আনা সম্প্রদায়ের অংশ হোন। খাবার ভাগ করুন, অপচয় কমান।',
+
+    // Stats
+    'stats.communityMembers': 'সম্প্রদায়ের সদস্য',
+    'stats.foodItemsShared': 'ভাগ করা খাদ্য সামগ্রী',
+    'stats.mealsRescued': 'উদ্ধারকৃত খাবার',
+    'stats.requestsFulfilled': 'পূর্ণ হওয়া অনুরোধ',
+    'stats.impact': 'প্রকৃত প্রভাব তৈরি করছি',
+    'stats.impactSubtitle': 'আমাদের সম্প্রদায় খাদ্য অপচয় কমাতে এবং অভাবীদের সাহায্য করতে একসাথে কাজ করছে।',
+
+    // Features
+    'features.howItWorks': 'নরিশনেট কিভাবে কাজ করে',
+    'features.howItWorksSubtitle': 'আপনার সম্প্রদায়ে সহজ, নিরাপদ এবং টেকসই খাদ্য ভাগাভাগি।',
+    'features.locationBased': 'অবস্থান-ভিত্তিক ভাগাভাগি',
+    'features.locationBasedDesc': 'সুনির্দিষ্ট লোকেশন ট্র্যাকিং দিয়ে আপনার পাড়ায় খাবার খুঁজুন।',
+    'features.communityNetwork': 'সম্প্রদায় নেটওয়ার্ক',
+    'features.communityNetworkDesc': 'খাদ্য অপচয় কমানোর যত্ন নেওয়া যাচাইকৃত সদস্যদের সাথে সংযুক্ত হন।',
+    'features.smartMatching': 'স্মার্ট ম্যাচিং',
+    'features.smartMatchingDesc': 'উন্নত ফিল্টার আপনার প্রয়োজনীয় জিনিস খুঁজে পেতে সাহায্য করে।',
+
+    // Problem Section
+    'problem.title': 'সমস্যা – খাদ্য অপচয় একটি বৈশ্বিক সংকট',
+    'problem.subtitle': 'প্রতি বছর কোটি কোটি টন ভালো খাবার আবর্জনায় যায় যখন লক্ষ লক্ষ মানুষ ক্ষুধার্ত থাকে।',
+
+    // Solution Section
+    'solution.title': 'সমাধান',
+    'solution.subtitle': 'নরিশনেট সম্প্রদায়-চালিত প্ল্যাটফর্মের মাধ্যমে খাদ্য দাতাদের অভাবীদের সাথে সংযুক্ত করে।',
+    'solution.postSurplus': 'উদ্বৃত্ত খাবার পোস্ট করুন',
+    'solution.postSurplusDesc': 'বাড়ি, রেস্তোরাঁ বা অনুষ্ঠান থেকে অতিরিক্ত খাবার ভাগ করুন।',
+    'solution.requestConnect': 'অনুরোধ ও সংযোগ',
+    'solution.requestConnectDesc': 'কাছের খাবার খুঁজুন এবং নিরাপদে যোগাযোগ করুন।',
+    'solution.trackImpact': 'প্রভাব ট্র্যাক করুন',
+    'solution.trackImpactDesc': 'সংরক্ষিত খাবার এবং কমানো অপচয় দেখুন।',
+
+    // Platform Features
+    'platform.title': 'প্ল্যাটফর্ম বৈশিষ্ট্য',
+    'platform.subtitle': 'নিরাপদ এবং প্রভাবশালী খাদ্য ভাগাভাগির জন্য আধুনিক প্রযুক্তিতে নির্মিত।',
+    'platform.locationDiscovery': 'অবস্থান-ভিত্তিক আবিষ্কার',
+    'platform.locationDiscoveryDesc': 'GPS-চালিত কাছের খাবার অনুসন্ধান।',
+    'platform.verifiedCommunity': 'যাচাইকৃত সম্প্রদায়',
+    'platform.verifiedCommunityDesc': 'বিশ্বাসের জন্য রেটিং এবং পর্যালোচনা।',
+    'platform.sustainabilityTracking': 'টেকসই ট্র্যাকিং',
+    'platform.sustainabilityTrackingDesc': 'সংরক্ষিত খাবার এবং প্রভাব নিরীক্ষণ।',
+
+    // Requests
+    'requests.incoming': 'আগত অনুরোধ',
+    'requests.outgoing': 'আমার অনুরোধ',
+    'requests.pending': 'মুলতুবি',
+    'requests.accepted': 'গৃহীত',
+    'requests.declined': 'প্রত্যাখ্যাত',
+    'requests.completed': 'সংগৃহীত',
+    'requests.cancelled': 'বাতিল',
+    'requests.expired': 'মেয়াদোত্তীর্ণ',
+    'requests.markCollected': 'সংগৃহীত হিসেবে চিহ্নিত করুন',
+    'requests.markedClaimed': 'দাবি করা হয়েছে',
+    'requests.finished': 'শেষ',
+    'requests.awaitingPickup': 'পিকআপের অপেক্ষায়',
+
+    // Common
+    'common.loading': 'লোড হচ্ছে...',
+    'common.error': 'ত্রুটি',
+    'common.success': 'সফল',
+    'common.cancel': 'বাতিল',
+    'common.confirm': 'নিশ্চিত করুন',
+    'common.save': 'সংরক্ষণ',
+    'common.delete': 'মুছুন',
+    'common.edit': 'সম্পাদনা',
+    'common.back': 'পিছনে',
+    'common.next': 'পরবর্তী',
+    'common.previous': 'পূর্ববর্তী',
+    'common.search': 'অনুসন্ধান',
+    'common.filter': 'ফিল্টার',
+    'common.sort': 'সাজান',
+    'common.noResults': 'কোনো ফলাফল পাওয়া যায়নি',
+    'common.backToTop': 'উপরে যান',
+
+    // Dashboard
+    'dashboard.title': 'আপনার কাছের খাবার',
+    'dashboard.subtitle': 'আপনার সম্প্রদায়ে উপলব্ধ খাবার খুঁজুন',
+    'dashboard.searchPlaceholder': 'খাবার, অবস্থান অনুসন্ধান...',
+    'dashboard.filters': 'ফিল্টার',
+    'dashboard.clearAll': 'সব মুছুন',
+    'dashboard.noFoodAvailable': 'কাছে কোনো খাবার নেই',
+    'dashboard.noFoodMatchingFilters': 'আপনার ফিল্টারের সাথে মেলে না',
+    'dashboard.viewDetails': 'বিস্তারিত',
+    'dashboard.requestFood': 'অনুরোধ',
+    'dashboard.newest': 'নতুন',
+    'dashboard.nearest': 'নিকটতম',
+    'dashboard.allCategories': 'সব বিভাগ',
+    'dashboard.allCuisines': 'সব রান্না',
+    'dashboard.allTags': 'সব ট্যাগ',
+
+    // Footer
+    'footer.tagline': 'খাবার ভাগ করুন, অপচয় কমান, সম্প্রদায়কে পুষ্টি দিন।',
+    'footer.privacy': 'গোপনীয়তা',
+    'footer.terms': 'শর্তাবলী',
+    'footer.contact': 'যোগাযোগ',
+    'footer.rights': 'সর্বস্বত্ব সংরক্ষিত।',
+
+    // Language
+    'language.english': 'English',
+    'language.tamil': 'தமிழ்',
+    'language.hindi': 'हिंदी',
+    'language.telugu': 'తెలుగు',
+    'language.bengali': 'বাংলা',
+    'language.select': 'ভাষা নির্বাচন করুন',
+
+    // Health Advisor
+    'healthAdvisor.title': 'AI স্বাস্থ্য পরামর্শদাতা',
+    'healthAdvisor.desc': 'খাবারের ছবি থেকে তাৎক্ষণিক AI-চালিত স্বাস্থ্য অন্তর্দৃষ্টি পান।',
+    'healthAdvisor.upload': 'খাবারের ছবি আপলোড করুন',
+    'healthAdvisor.uploadDesc': 'বিশ্লেষণের জন্য খাবারের ছবি তুলুন (সর্বোচ্চ ৩)',
+    'healthAdvisor.analyzing': 'বিশ্লেষণ হচ্ছে...',
+    'healthAdvisor.analyze': 'স্বাস্থ্য ঝুঁকি বিশ্লেষণ করুন',
+    'healthAdvisor.results': 'স্বাস্থ্য বিশ্লেষণ ফলাফল',
+    'healthAdvisor.analyzingRisks': 'স্বাস্থ্য ঝুঁকি বিশ্লেষণ হচ্ছে...',
+    'healthAdvisor.aiEvaluating': 'AI পুষ্টি এবং স্বাস্থ্য তথ্য মূল্যায়ন করছে',
+    'healthAdvisor.diabeticRisk': 'ডায়াবেটিক ঝুঁকি',
+    'healthAdvisor.cholesterolImpact': 'কোলেস্টেরল প্রভাব',
+    'healthAdvisor.weightGain': 'ওজন বৃদ্ধির সম্ভাবনা',
+    'healthAdvisor.aiSuggestion': 'AI পরামর্শ',
+    'healthAdvisor.disclaimer': 'AI-উত্পন্ন অন্তর্দৃষ্টি। চিকিৎসা নির্ণয় নয়।',
+    'postFood.foodDetails': 'খাবারের বিবরণ',
+    'postFood.foodDetailsDesc': 'আপনি যে খাবার শেয়ার করতে চান তার তথ্য দিন',
+    'postFood.foodTitle': 'খাবারের শিরোনাম',
+    'postFood.description': 'বিবরণ',
+    'postFood.foodCategory': 'খাবার বিভাগ',
+    'postFood.selectCategory': 'খাবার বিভাগ নির্বাচন করুন',
+    'postFood.cuisineType': 'রান্নার ধরন',
+    'postFood.selectCuisine': 'রান্নার ধরন নির্বাচন করুন',
+    'postFood.pickupLocation': 'পিকআপ স্থান',
+    'postFood.useCurrentLocation': 'বর্তমান অবস্থান ব্যবহার করুন',
+    'postFood.locating': 'খুঁজছে...',
+    'postFood.latitude': 'অক্ষাংশ',
+    'postFood.longitude': 'দ্রাঘিমাংশ',
+    'postFood.tags': 'ট্যাগ',
+    'postFood.tagsDesc': 'আপনার খাবার বর্ণনা করে এমন ট্যাগ নির্বাচন করুন',
+    'postFood.foodImages': 'খাবারের ছবি (৩ পর্যন্ত)',
+    'postFood.bestBefore': 'সেরা তারিখ',
+    'postFood.selectDate': 'সেরা তারিখ ও সময় নির্বাচন করুন',
+    'postFood.shareFood': 'সম্প্রদায়ের সাথে খাবার শেয়ার করুন',
+    'postFood.sharing': 'শেয়ার হচ্ছে...',
+    'postFood.completeProfile': 'প্রথমে আপনার প্রোফাইল সম্পূর্ণ করুন',
+    'postFood.completeProfileDesc': 'খাবার শেয়ার করার আগে আপনার প্রোফাইল সম্পূর্ণ করুন।',
+    'postFood.completeProfileBtn': 'প্রোফাইল সম্পূর্ণ করুন',
+    'postFood.coordinates': 'স্থানাঙ্ক',
+    'postFood.locationHelp': 'আপনার বর্তমান অবস্থান ব্যবহার করুন বা বিস্তারিত ঠিকানা লিখুন।',
+    'managePosts.posted': 'পোস্ট করা হয়েছে',
+    'managePosts.noPostsYet': 'এখনও কোনো পোস্ট নেই',
+    'managePosts.startSharing': 'আপনার সম্প্রদায়ের সাথে খাবার শেয়ার করা শুরু করুন।',
+    'managePosts.editPost': 'খাবার পোস্ট সম্পাদনা করুন',
+    'managePosts.editPostDesc': 'আপনি শুধুমাত্র অবস্থান আপডেট করতে পারেন।',
+    'managePosts.foodImage': 'খাবারের ছবি',
+    'managePosts.viewFullImage': 'পূর্ণ ছবি দেখুন',
+    'managePosts.noImage': 'ছবি নেই',
+    'managePosts.noImageAvailable': 'ছবি উপলব্ধ নেই',
+    'managePosts.location': 'অবস্থান (সম্পাদনাযোগ্য)',
+    'managePosts.enterLocation': 'আপনার অবস্থান লিখুন',
+    'managePosts.useCurrent': 'বর্তমান ব্যবহার',
+    'managePosts.getting': 'পাচ্ছে...',
+    'managePosts.saving': 'সংরক্ষণ হচ্ছে...',
+    'managePosts.updateLocation': 'অবস্থান আপডেট করুন',
+    'managePosts.deletePost': 'পোস্ট মুছুন',
+    'managePosts.deleteConfirm': 'আপনি কি নিশ্চিত? এটি পূর্বাবস্থায় ফেরানো যাবে না।',
+    'managePosts.bestBefore': 'সেরা তারিখ',
+    'managePosts.close': 'বন্ধ করুন',
+    'profile.name': 'নাম',
+    'profile.bio': 'জীবনী',
+    'profile.location': 'অবস্থান/ঠিকানা',
+    'profile.phone': 'ফোন নম্বর',
+    'profile.whatsapp': 'হোয়াটসঅ্যাপ নম্বর',
+    'profile.editProfile': 'প্রোফাইল সম্পাদনা করুন',
+    'profile.save': 'সংরক্ষণ',
+    'profile.saving': 'সংরক্ষণ হচ্ছে...',
+    'profile.myFoodPosts': 'আমার খাবার পোস্ট',
+    'profile.noPostsYet': 'এখনও কোনো খাবার পোস্ট নেই',
+    'profile.startSharing': 'আপনার সম্প্রদায়ের সাথে খাবার শেয়ার করা শুরু করুন',
+    'profile.shareFood': 'খাবার শেয়ার করুন',
+    'profile.postedOn': 'পোস্ট করা হয়েছে',
+    'profile.markTaken': 'নেওয়া হিসেবে চিহ্নিত',
+    'profile.markAvailable': 'উপলব্ধ চিহ্নিত',
+
+    // Cards & Time formatting
+    'time.justNow': 'এইমাত্র',
+    'time.hoursAgo': 'ঘণ্টা আগে',
+    'time.daysAgo': 'দিন আগে',
+    'status.available': 'উপলব্ধ',
+    'status.requested': 'অনুরোধ করা হয়েছে',
+    'status.reserved': 'সংরক্ষিত',
+    'status.completed': 'সম্পন্ন',
+    'status.expired': 'মেয়াদ উত্তীর্ণ',
+    'status.collected': 'সংগৃহীত',
+    'status.pending': 'অপেক্ষমান',
+    'status.accepted': 'গৃহীত',
+    'status.declined': 'প্রত্যাখাত',
+    'status.cancelled': 'বাতিল করা হয়েছে',
+    'card.request': 'অনুরোধ করুন',
+    'card.requesting': 'অনুরোধ করা হচ্ছে...',
+    'card.locationOwner': 'পরিবেশক দ্বারা প্রদত্ত অবস্থান',
+    'card.by': 'দ্বারা',
+    'card.anonymousUser': 'অজ্ঞাত ব্যবহারকারী',
+    'card.viewDetails': 'বিস্তারিত দেখুন',
+    'card.requestFoodPrompt': 'এই খাবারের অনুরোধ করবেন?',
+    'card.aboutToRequest': 'আপনি {{provider}}-এর কাছ থেকে "{{food}}" অনুরোধ করতে চলেছেন। তাদের জানানো হবে।',
+    'card.confirmRequest': 'অনুরোধ নিশ্চিত করুন',
+    'card.cancel': 'বাতিল করুন',
+    'card.expiredDesc': 'এই খাবারটি মেয়াদ পার হয়ে গেছে এবং আর উপলব্ধ নয়।',
+    'card.edit': 'সম্পাদনা করুন',
+    'card.delete': 'মুছে ফেলুন',
+    'card.save': 'সংরক্ষণ করুন',
+    'profile.anonymousUser': 'বেনামী ব্যবহারকারী',
+
+    // Requests Page
+    'requests.refresh': 'রিফ্রেশ করুন',
+    'statusTooltip.pending': 'প্রদানকারীর উত্তরের অপেক্ষায়',
+    'statusTooltip.accepted': 'আপনার অনুরোধ গৃহীত হয়েছে! প্রদানকারীর সাথে যোগাযোগ করুন।',
+    'statusTooltip.declined': 'দুর্ভাগ্যবশত, এই অনুরোধ প্রত্যাখ্যান করা হয়েছে।',
+    'statusTooltip.completed': 'খাবার সফলভাবে সংগ্রহ করা হয়েছে!',
+    'statusTooltip.collected': 'খাবার সফলভাবে সংগ্রহ করা হয়েছে!',
+    'statusTooltip.cancelled': 'এই অনুরোধ বাতিল করা হয়েছে।',
+    'statusTooltip.expired': 'এই অনুরোধের মেয়াদ শেষ।',
+    'footer.credit': 'Sanjay Dharmarajou এর একটি পণ্য',
+  },
 };
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -400,7 +1244,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const loadLanguage = async () => {
       // First check localStorage for guest preference
       const storedLang = localStorage.getItem('nourishnet_language') as Language;
-      
+
       if (user) {
         // For logged-in users, try to get from profile
         try {
@@ -409,42 +1253,46 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
             .select('preferred_language')
             .eq('user_id', user.id)
             .maybeSingle();
-          
+
           if (data?.preferred_language) {
             setLanguageState(data.preferred_language as Language);
             localStorage.setItem('nourishnet_language', data.preferred_language);
-          } else if (storedLang && ['en', 'ta', 'hi'].includes(storedLang)) {
+          } else if (storedLang && ['en', 'ta', 'hi', 'te', 'bn'].includes(storedLang)) {
             setLanguageState(storedLang);
           }
         } catch (error) {
           // Fallback to localStorage
-          if (storedLang && ['en', 'ta', 'hi'].includes(storedLang)) {
+          if (storedLang && ['en', 'ta', 'hi', 'te', 'bn'].includes(storedLang)) {
             setLanguageState(storedLang);
           }
         }
-      } else if (storedLang && ['en', 'ta', 'hi'].includes(storedLang)) {
+      } else if (storedLang && ['en', 'ta', 'hi', 'te', 'bn'].includes(storedLang)) {
         setLanguageState(storedLang);
       }
-      
+
       setIsInitialized(true);
     };
-    
+
     loadLanguage();
   }, [user]);
 
   const setLanguage = useCallback(async (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('nourishnet_language', lang);
-    
-    // If user is logged in, save to profile
+
+    // Try to save to profile — silently ignore failures (column may not exist or have constraints)
     if (user) {
       try {
-        await supabase
+        const { error } = await supabase
           .from('profiles')
           .update({ preferred_language: lang })
           .eq('user_id', user.id);
-      } catch (error) {
-        console.error('Failed to save language preference:', error);
+        if (error) {
+          // Column may not exist or have a CHECK constraint — language still works via localStorage
+          console.debug('Language pref not saved to DB (using localStorage):', error.message);
+        }
+      } catch {
+        // Network/auth error — silently continue, localStorage handles it
       }
     }
   }, [user]);

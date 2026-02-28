@@ -20,6 +20,7 @@ import ManagePosts from "./pages/ManagePosts";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
+import FoodScanner from "./pages/FoodScanner";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,13 @@ const App = () => (
                   <ProtectedRoute>
                     <Layout>
                       <ManagePosts />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/food-scanner" element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <FoodScanner />
                     </Layout>
                   </ProtectedRoute>
                 } />

@@ -14,6 +14,7 @@ import { useFoodPostRequests, FoodPostRequest } from '@/hooks/useFoodPostRequest
 import { RatingModal } from '@/components/RatingModal';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 interface OutgoingRequest {
   id: string;
@@ -108,6 +109,7 @@ const getEffectiveStatus = (status: string, bestBefore?: string): keyof typeof s
 
 export default function Requests() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const {
     requests: incomingRequests,
     loading: incomingLoading,
@@ -117,6 +119,15 @@ export default function Requests() {
     completeRequest,
     refresh: refreshIncoming,
   } = useFoodPostRequests();
+
+  const formatTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const postDate = new Date(dateString);
+    const diffInHours = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60 * 60));
+    if (diffInHours < 1) return t('time.justNow');
+    if (diffInHours < 24) return `${diffInHours} ${t('time.hoursAgo')}`;
+    return `${Math.floor(diffInHours / 24)} ${t('time.daysAgo')}`;
+  };
 
   const [outgoingRequests, setOutgoingRequests] = useState<OutgoingRequest[]>([]);
   const [outgoingLoading, setOutgoingLoading] = useState(true);
@@ -135,6 +146,7 @@ export default function Requests() {
     postId: string;
     providerName: string;
   }>({ open: false, providerId: '', postId: '', providerName: '' });
+  const [ratedPosts, setRatedPosts] = useState<Set<string>>(new Set());
 
   // Fetch outgoing requests (requests made by current user)
   const fetchOutgoingRequests = useCallback(async () => {
@@ -156,7 +168,7 @@ export default function Requests() {
       }
 
       const postIds = [...new Set(requestsData.map((r) => r.post_id))];
-      
+
       // Get food posts data including status
       const { data: foodPosts, error: foodPostsError } = await supabase
         .from('food_posts')
@@ -168,7 +180,7 @@ export default function Requests() {
       if (foodPostsError) throw foodPostsError;
 
       const providerIds = [...new Set(foodPosts?.map((p) => p.user_id) || [])];
-      
+
       // Get provider profiles with phone numbers
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
@@ -282,31 +294,24 @@ export default function Requests() {
   // Handle requester marking as collected (outgoing requests)
   const handleRequesterComplete = async (request: OutgoingRequest) => {
     if (!request.food_posts?.user_id) return;
-    
+
     setProcessingRequest(request.id);
     try {
-      // Update the food post status to 'collected'
-      const { error: postError } = await supabase
-        .from('food_posts')
-        .update({ status: 'collected' })
-        .eq('id', request.post_id);
+      // Call the secure RPC function that bypasses RLS 
+      // and handles both food_posts + food_post_requests updates atomically
+      const { data, error } = await supabase.rpc('mark_food_collected', {
+        p_request_id: request.id,
+        p_post_id: request.post_id,
+      });
 
-      if (postError) throw postError;
+      if (error) throw error;
 
-      // Update request status to completed and update timestamp
-      const { error: reqError } = await supabase
-        .from('food_post_requests')
-        .update({ 
-          status: 'completed',
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', request.id);
-
-      if (reqError) {
-        console.warn('Could not update request status, but food post is collected');
+      const result = data as { success: boolean; error?: string; message?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to mark as collected');
       }
 
-      // Update local state immediately - mark as collected in history
+      // Update local state immediately — mark as collected in history
       setOutgoingRequests(prev => prev.map(r => {
         if (r.id === request.id) {
           return {
@@ -331,13 +336,14 @@ export default function Requests() {
         providerName: request.provider_profile?.full_name || request.provider_profile?.name || 'the provider',
       });
 
-      // Also refresh incoming requests to update poster's view
+      // Refresh both sides to sync state from DB
       refreshIncoming();
-    } catch (error) {
+      fetchOutgoingRequests();
+    } catch (error: any) {
       console.error('Error marking as collected:', error);
       toast({
         title: "❌ Failed to mark as collected",
-        description: "Please try again.",
+        description: error?.message || "Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -416,18 +422,18 @@ export default function Requests() {
   const StatusBadge = ({ status }: { status: keyof typeof statusConfig }) => {
     const config = statusConfig[status];
     const Icon = config.icon;
-    
+
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <Badge variant={config.variant} className="flex items-center gap-1 cursor-help">
               <Icon className="w-3 h-3" />
-              {config.label}
+              {t(`status.${status}`)}
             </Badge>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-sm">{config.tooltip}</p>
+            <p className="text-sm">{t(`statusTooltip.${status}`)}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -444,8 +450,9 @@ export default function Requests() {
     return effectiveStatus === 'expired';
   });
   const acceptedIncoming = incomingRequests.filter(r => r.status === 'accepted');
+  const completedIncoming = incomingRequests.filter(r => r.status === 'completed');
   const declinedIncoming = incomingRequests.filter(r => r.status === 'declined');
-  
+
   // Outgoing requests - separate active, expired pending, and history (collected, declined, cancelled)
   const activeOutgoing = outgoingRequests.filter(r => {
     // Skip if already collected/completed
@@ -456,18 +463,18 @@ export default function Requests() {
     if (r.status === 'pending' && !isRequestExpired(r.food_posts?.best_before)) return true;
     return false;
   });
-  
-  const expiredOutgoing = outgoingRequests.filter(r => 
-    r.status === 'pending' && 
-    isRequestExpired(r.food_posts?.best_before) && 
+
+  const expiredOutgoing = outgoingRequests.filter(r =>
+    r.status === 'pending' &&
+    isRequestExpired(r.food_posts?.best_before) &&
     r.food_posts?.status !== 'collected'
   );
-  
+
   // History includes collected/completed, declined, and cancelled
-  const historyOutgoing = outgoingRequests.filter(r => 
-    r.status === 'completed' || 
-    r.status === 'declined' || 
-    r.status === 'cancelled' || 
+  const historyOutgoing = outgoingRequests.filter(r =>
+    r.status === 'completed' ||
+    r.status === 'declined' ||
+    r.status === 'cancelled' ||
     r.food_posts?.status === 'collected'
   );
 
@@ -483,7 +490,13 @@ export default function Requests() {
 
       <RatingModal
         open={ratingModal.open}
-        onOpenChange={(open) => setRatingModal((prev) => ({ ...prev, open }))}
+        onOpenChange={(open) => {
+          setRatingModal((prev) => ({ ...prev, open }));
+          // When the rating modal closes after submission, mark the post as rated
+          if (!open && ratingModal.postId) {
+            setRatedPosts(prev => new Set(prev).add(ratingModal.postId));
+          }
+        }}
         providerId={ratingModal.providerId}
         postId={ratingModal.postId}
         providerName={ratingModal.providerName}
@@ -492,7 +505,7 @@ export default function Requests() {
       {/* Header with refresh button */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold truncate">Requests</h1>
+          <h1 className="text-xl sm:text-2xl font-bold truncate">{t('nav.requests')}</h1>
           {newRequestCount > 0 && (
             <Badge variant="default" className="animate-pulse flex items-center gap-1 flex-shrink-0">
               <Bell className="w-3 h-3" />
@@ -501,9 +514,9 @@ export default function Requests() {
             </Badge>
           )}
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={handleRefresh}
           disabled={isRefreshing}
           className="flex items-center gap-1 sm:gap-2 flex-shrink-0"
@@ -517,14 +530,14 @@ export default function Requests() {
       <section className="space-y-3 sm:space-y-4">
         <div className="flex items-center gap-2">
           <Inbox className="w-4 sm:w-5 h-4 sm:h-5 text-primary" />
-          <h2 className="text-lg sm:text-xl font-semibold">Incoming Requests</h2>
+          <h2 className="text-lg sm:text-xl font-semibold">{t('requests.incoming')}</h2>
           {(pendingIncoming.length > 0 || acceptedIncoming.length > 0) && (
             <Badge variant="secondary" className="ml-1 sm:ml-2">
               {pendingIncoming.length + acceptedIncoming.length}
             </Badge>
           )}
         </div>
-        
+
         {incomingLoading ? (
           <Card className="glass-card">
             <CardContent className="flex items-center justify-center py-8">
@@ -532,7 +545,7 @@ export default function Requests() {
               <span className="text-muted-foreground">Loading incoming requests...</span>
             </CardContent>
           </Card>
-        ) : pendingIncoming.length === 0 && acceptedIncoming.length === 0 && expiredIncoming.length === 0 && declinedIncoming.length === 0 ? (
+        ) : pendingIncoming.length === 0 && acceptedIncoming.length === 0 && completedIncoming.length === 0 && expiredIncoming.length === 0 && declinedIncoming.length === 0 ? (
           <Card className="glass-card">
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
               <Inbox className="w-12 h-12 text-muted-foreground mb-4" />
@@ -545,145 +558,183 @@ export default function Requests() {
             {/* Active pending and accepted requests */}
             {(pendingIncoming.length > 0 || acceptedIncoming.length > 0) && (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <AnimatePresence mode="popLayout">
-              {[...pendingIncoming, ...acceptedIncoming].map((request: FoodPostRequest) => (
-                <motion.div
-                  key={request.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Card className="glass-card h-full hover:shadow-lg transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-base truncate">
-                            {request.food_posts?.food_title || 'Unknown Food'}
-                          </CardTitle>
-                          <CardDescription className="flex items-center gap-2 mt-1">
-                            <Avatar className="w-5 h-5">
-                              <AvatarImage src={request.requester_profile?.avatar_url} />
-                              <AvatarFallback className="text-[10px]">
-                                {(request.requester_profile?.name || request.requester_profile?.full_name || 'U').charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="truncate">
-                              {request.requester_profile?.full_name || request.requester_profile?.name || 'Unknown'}
-                            </span>
-                          </CardDescription>
-                        </div>
-                        <StatusBadge status={request.status} />
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0 space-y-3">
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
-                      </p>
-                      
-                      <div className="flex flex-wrap gap-2">
-                        {request.status === 'pending' && (
-                          <>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  className="flex-1 min-w-[80px]"
-                                  disabled={processingRequest === request.id}
-                                >
-                                  {processingRequest === request.id ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : (
-                                    <>
-                                      <CheckCircle2 className="w-4 h-4 mr-1" />
-                                      Accept
-                                    </>
-                                  )}
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Accept this request?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will reserve the food for {request.requester_profile?.name || 'this person'} and decline other pending requests for this item.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleAccept(request)}>
-                                    Accept Request
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                            
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="flex-1 min-w-[80px]"
-                                  disabled={processingRequest === request.id}
-                                >
-                                  <XCircle className="w-4 h-4 mr-1" />
-                                  Decline
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Decline this request?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to decline this request from {request.requester_profile?.name || 'this person'}?
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDecline(request)}>
-                                    Decline
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </>
-                        )}
-                        
-                        {request.status === 'accepted' && (
-                          <div className="w-full space-y-2">
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => handleCall(request.requester_profile?.phone_number || '')}
-                              >
-                                <Phone className="w-4 h-4 mr-1" />
-                                Call
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => handleWhatsApp(
-                                  request.requester_profile?.phone_number || '',
-                                  request.food_posts?.food_title || 'food item'
-                                )}
-                              >
-                                <MessageCircle className="w-4 h-4 mr-1" />
-                                WhatsApp
-                              </Button>
+                <AnimatePresence mode="popLayout">
+                  {[...pendingIncoming, ...acceptedIncoming].map((request: FoodPostRequest) => (
+                    <motion.div
+                      key={request.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                      style={{ willChange: 'transform, opacity' }}
+                    >
+                      <Card className="glass-card h-full hover:shadow-lg transition-shadow">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-base truncate">
+                                {request.food_posts?.food_title || 'Unknown Food'}
+                              </CardTitle>
+                              <CardDescription className="flex items-center gap-2 mt-1">
+                                <Avatar className="w-5 h-5">
+                                  <AvatarImage src={request.requester_profile?.avatar_url} />
+                                  <AvatarFallback className="text-[10px]">
+                                    {(request.requester_profile?.name || request.requester_profile?.full_name || 'U').charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="truncate">
+                                  {request.requester_profile?.full_name || request.requester_profile?.name || 'Unknown'}
+                                </span>
+                              </CardDescription>
                             </div>
-                            <p className="text-xs text-success font-medium text-center">
-                              ✓ Awaiting collection by requester
-                            </p>
+                            <StatusBadge status={request.status} />
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                        </CardHeader>
+                        <CardContent className="pt-0 space-y-3">
+                          <p className="text-xs text-muted-foreground">
+                            {formatTimeAgo(request.created_at)}
+                          </p>
+
+                          <div className="flex flex-wrap gap-2">
+                            {request.status === 'pending' && (
+                              <>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      className="flex-1 min-w-[80px]"
+                                      disabled={processingRequest === request.id}
+                                    >
+                                      {processingRequest === request.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <>
+                                          <CheckCircle2 className="w-4 h-4 mr-1" />
+                                          Accept
+                                        </>
+                                      )}
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Accept this request?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will reserve the food for {request.requester_profile?.name || 'this person'} and decline other pending requests for this item.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleAccept(request)}>
+                                        Accept Request
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1 min-w-[80px]"
+                                      disabled={processingRequest === request.id}
+                                    >
+                                      <XCircle className="w-4 h-4 mr-1" />
+                                      Decline
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Decline this request?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to decline this request from {request.requester_profile?.name || 'this person'}?
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDecline(request)}>
+                                        Decline
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </>
+                            )}
+
+                            {request.status === 'accepted' && (
+                              <div className="w-full space-y-2">
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => handleCall(request.requester_profile?.phone_number || '')}
+                                  >
+                                    <Phone className="w-4 h-4 mr-1" />
+                                    Call
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => handleWhatsApp(
+                                      request.requester_profile?.phone_number || '',
+                                      request.food_posts?.food_title || 'food item'
+                                    )}
+                                  >
+                                    <MessageCircle className="w-4 h-4 mr-1" />
+                                    WhatsApp
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-success font-medium text-center">
+                                  ✓ Awaiting collection by requester
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Completed / Collected incoming requests */}
+            {completedIncoming.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-success mb-3 flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Collected
+                </h3>
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {completedIncoming.map((request: FoodPostRequest) => (
+                    <Card key={request.id} className="glass-card border-success/30">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{request.food_posts?.food_title || 'Unknown'}</p>
+                            <CardDescription className="flex items-center gap-2 mt-1">
+                              <Avatar className="w-5 h-5">
+                                <AvatarImage src={request.requester_profile?.avatar_url} />
+                                <AvatarFallback className="text-[10px]">
+                                  {(request.requester_profile?.name || request.requester_profile?.full_name || 'U').charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="truncate">
+                                {request.requester_profile?.full_name || request.requester_profile?.name || 'Unknown'}
+                              </span>
+                            </CardDescription>
+                          </div>
+                          <StatusBadge status="collected" />
+                        </div>
+                        <p className="text-xs text-success font-medium">
+                          ✓ Collected by {request.requester_profile?.full_name || request.requester_profile?.name || 'requester'}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -814,14 +865,14 @@ export default function Requests() {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Send className="w-5 h-5 text-primary" />
-          <h2 className="text-xl font-semibold">My Requests</h2>
+          <h2 className="text-xl font-semibold">{t('requests.outgoing')}</h2>
           {activeOutgoing.length > 0 && (
             <Badge variant="secondary" className="ml-2">
               {activeOutgoing.length} active
             </Badge>
           )}
         </div>
-        
+
         {outgoingLoading ? (
           <Card className="glass-card">
             <CardContent className="flex items-center justify-center py-8">
@@ -851,11 +902,11 @@ export default function Requests() {
                   {activeOutgoing.map((request) => (
                     <motion.div
                       key={request.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                      style={{ willChange: 'transform, opacity' }}
                     >
                       <Card className={`glass-card h-full hover:shadow-lg transition-shadow ${request.status === 'accepted' ? 'ring-2 ring-success/50' : ''}`}>
                         <CardHeader className="pb-3">
@@ -881,7 +932,7 @@ export default function Requests() {
                         </CardHeader>
                         <CardContent className="pt-0 space-y-3">
                           <p className="text-xs text-muted-foreground">
-                            Requested {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
+                            Requested {formatTimeAgo(request.created_at)}
                           </p>
                           {request.status === 'accepted' && (
                             <>
@@ -1021,7 +1072,7 @@ export default function Requests() {
                   {historyOutgoing.slice(0, 12).map((request) => {
                     const isCollected = request.status === 'completed' || request.food_posts?.status === 'collected';
                     const displayStatus = isCollected ? 'collected' : request.status;
-                    
+
                     return (
                       <Card key={request.id} className={`glass-card ${isCollected ? '' : 'opacity-75'}`}>
                         <CardContent className="p-4">
@@ -1034,25 +1085,33 @@ export default function Requests() {
                             </div>
                             <StatusBadge status={displayStatus as keyof typeof statusConfig} />
                           </div>
-                          
+
                           {/* Collected items - show rate button */}
-                          {isCollected && request.food_posts?.user_id && (
+                          {isCollected && request.food_posts?.user_id && !ratedPosts.has(request.post_id) && (
                             <Button
                               size="sm"
                               variant="outline"
                               className="w-full"
-                              onClick={() => setRatingModal({
-                                open: true,
-                                providerId: request.food_posts!.user_id,
-                                postId: request.post_id,
-                                providerName: request.provider_profile?.full_name || request.provider_profile?.name || 'the provider',
-                              })}
+                              onClick={() => {
+                                setRatingModal({
+                                  open: true,
+                                  providerId: request.food_posts!.user_id,
+                                  postId: request.post_id,
+                                  providerName: request.provider_profile?.full_name || request.provider_profile?.name || 'the provider',
+                                });
+                              }}
                             >
                               <CheckCircle2 className="w-4 h-4 mr-1" />
                               Rate Provider
                             </Button>
                           )}
-                          
+
+                          {isCollected && ratedPosts.has(request.post_id) && (
+                            <p className="text-xs text-success text-center font-medium">
+                              ✓ Rated — Thank you!
+                            </p>
+                          )}
+
                           {/* Declined items - show delete button */}
                           {request.status === 'declined' && (
                             <AlertDialog>

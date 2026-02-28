@@ -14,6 +14,7 @@ import { Settings, Edit3, Trash2, Loader2, Clock, ImageIcon, Navigation, Eye, Lo
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { checkAndExpirePosts } from '@/hooks/useFoodPostLifecycle';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 interface FoodPost {
   id: string;
@@ -34,6 +35,7 @@ interface FoodPost {
 
 export default function ManagePosts() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [posts, setPosts] = useState<FoodPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPost, setEditingPost] = useState<FoodPost | null>(null);
@@ -54,7 +56,7 @@ export default function ManagePosts() {
 
   const fetchUserPosts = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -89,7 +91,7 @@ export default function ManagePosts() {
 
   const getCurrentLocation = async () => {
     setGettingLocation(true);
-    
+
     if (!("geolocation" in navigator)) {
       setGettingLocation(false);
       toast({
@@ -104,7 +106,7 @@ export default function ManagePosts() {
       async (position) => {
         const lat = position.coords.latitude;
         const long = position.coords.longitude;
-        
+
         setLocationData(prev => ({
           ...prev,
           location_lat: lat,
@@ -122,7 +124,7 @@ export default function ManagePosts() {
             }
           );
           const data = await response.json();
-          
+
           if (data.display_name) {
             setLocationData(prev => ({
               ...prev,
@@ -142,7 +144,7 @@ export default function ManagePosts() {
           }));
           console.error('Error getting location name:', error);
         }
-        
+
         setGettingLocation(false);
         toast({
           title: "Location obtained",
@@ -151,7 +153,7 @@ export default function ManagePosts() {
       },
       (error) => {
         setGettingLocation(false);
-        
+
         let errorMessage = "Unable to fetch location. Please try again.";
         switch (error.code) {
           case error.PERMISSION_DENIED:
@@ -164,7 +166,7 @@ export default function ManagePosts() {
             errorMessage = "Location request timed out. Please try again.";
             break;
         }
-        
+
         toast({
           title: "Location error",
           description: errorMessage,
@@ -223,7 +225,7 @@ export default function ManagePosts() {
 
   const formatCategoryLabel = (category?: string) => {
     if (!category) return 'N/A';
-    return category.split('_').map(word => 
+    return category.split('_').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
   };
@@ -257,10 +259,10 @@ export default function ManagePosts() {
     const now = new Date();
     const postDate = new Date(dateString);
     const diffInHours = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    return `${Math.floor(diffInHours / 24)}d ago`;
+
+    if (diffInHours < 1) return t('time.justNow');
+    if (diffInHours < 24) return `${diffInHours} ${t('time.hoursAgo')}`;
+    return `${Math.floor(diffInHours / 24)} ${t('time.daysAgo')}`;
   };
 
   return (
@@ -273,10 +275,10 @@ export default function ManagePosts() {
       <div className="glass-card p-6">
         <div className="flex items-center gap-3 mb-2">
           <Settings className="w-8 h-8 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">Manage My Posts</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('nav.managePosts')}</h1>
         </div>
         <p className="text-muted-foreground">
-          View, edit, and manage all your food posts
+          {t('dashboard.subtitle')}
         </p>
       </div>
 
@@ -300,9 +302,9 @@ export default function ManagePosts() {
           <Card className="glass-card">
             <CardContent className="text-center py-12">
               <Settings className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No posts yet</h3>
+              <h3 className="text-lg font-medium mb-2">{t('managePosts.noPostsYet')}</h3>
               <p className="text-muted-foreground">
-                Start sharing food with your community to see your posts here.
+                {t('managePosts.startSharing')}
               </p>
             </CardContent>
           </Card>
@@ -340,7 +342,7 @@ export default function ManagePosts() {
                       <div className="flex-1">
                         <CardTitle className="text-lg">{post.food_title}</CardTitle>
                         <CardDescription className="text-xs text-muted-foreground mt-1">
-                          Posted {formatTimeAgo(post.created_at)}
+                          {t('managePosts.posted')} {formatTimeAgo(post.created_at)}
                         </CardDescription>
                       </div>
                       <Badge variant={post.status === 'available' ? 'default' : 'secondary'}>
@@ -358,7 +360,7 @@ export default function ManagePosts() {
                     {post.best_before && (
                       <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-lg">
                         <Clock className="w-4 h-4" />
-                        <span>Best before {format(new Date(post.best_before), "MMM d, y 'at' h:mm a")}</span>
+                        <span>{t('managePosts.bestBefore')} {format(new Date(post.best_before), "MMM d, y 'at' h:mm a")}</span>
                       </div>
                     )}
 
@@ -371,9 +373,9 @@ export default function ManagePosts() {
                         onClick={() => handleEdit(post)}
                       >
                         <Edit3 className="w-4 h-4 mr-2" />
-                        Edit
+                        {t('common.edit')}
                       </Button>
-                      
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -382,23 +384,23 @@ export default function ManagePosts() {
                             className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {t('common.delete')}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                            <AlertDialogTitle>{t('managePosts.deletePost')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete "{post.food_title}"? This action cannot be undone.
+                              {t('managePosts.deleteConfirm')}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDelete(post.id)}
                               className="bg-red-600 hover:bg-red-700"
                             >
-                              Delete
+                              {t('common.delete')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -418,10 +420,10 @@ export default function ManagePosts() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit3 className="w-5 h-5" />
-              Edit Food Post
+              {t('managePosts.editPost')}
             </DialogTitle>
             <DialogDescription>
-              You can only update the location. All other fields are read-only to preserve data integrity.
+              {t('managePosts.editPostDesc')}
             </DialogDescription>
           </DialogHeader>
 
@@ -432,7 +434,7 @@ export default function ManagePosts() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-muted-foreground">
                     <Lock className="w-3 h-3" />
-                    Food Image
+                    {t('managePosts.foodImage')}
                   </Label>
                   {editingPost.image_url ? (
                     <div className="relative">
@@ -449,14 +451,14 @@ export default function ManagePosts() {
                         onClick={() => setImageViewOpen(true)}
                       >
                         <Eye className="w-4 h-4 mr-2" />
-                        View Full Image
+                        {t('managePosts.viewFullImage')}
                       </Button>
                     </div>
                   ) : (
                     <div className="w-full h-32 bg-muted/50 rounded-lg border border-border flex items-center justify-center">
                       <div className="text-center text-muted-foreground">
                         <ImageIcon className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm">No image available</p>
+                        <p className="text-sm">{t('managePosts.noImageAvailable')}</p>
                       </div>
                     </div>
                   )}
@@ -583,14 +585,14 @@ export default function ManagePosts() {
                 <div className="space-y-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Navigation className="w-4 h-4 text-primary" />
-                    <Label className="text-primary font-medium">Location (Editable)</Label>
+                    <Label className="text-primary font-medium">{t('managePosts.location')}</Label>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <Input
                       value={locationData.location_name}
                       onChange={(e) => handleLocationInputChange('location_name', e.target.value)}
-                      placeholder="Enter your location"
+                      placeholder={t('managePosts.enterLocation')}
                       className="flex-1 bg-background"
                     />
                     <Button
@@ -606,11 +608,11 @@ export default function ManagePosts() {
                         <Navigation className="w-4 h-4" />
                       )}
                       <span className="ml-2 hidden sm:inline">
-                        {gettingLocation ? 'Getting...' : 'Use Current'}
+                        {gettingLocation ? t('managePosts.getting') : t('managePosts.useCurrent')}
                       </span>
                     </Button>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label htmlFor="edit_lat" className="text-xs text-muted-foreground">Latitude</Label>
@@ -647,7 +649,7 @@ export default function ManagePosts() {
                     className="flex-1"
                     disabled={saving}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button
                     onClick={handleSaveEdit}

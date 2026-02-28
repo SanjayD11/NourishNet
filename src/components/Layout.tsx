@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Leaf, LogOut, User, MapPin, Inbox, Plus, Settings } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Leaf, LogOut, User, MapPin, Inbox, Plus, Settings, HeartPulse } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { useLanguage } from '@/providers/LanguageProvider';
 import { useFoodPostRequests } from '@/hooks/useFoodPostRequests';
 import { Footer } from '@/components/Footer';
 import { BackToTop } from '@/components/BackToTop';
@@ -16,23 +19,26 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const { user, signOut } = useAuth();
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { requests } = useFoodPostRequests();
+  const { t } = useLanguage();
   const hasPendingRequests = requests.some((request) => request.status === 'pending');
-  
+
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: MapPin },
-    { name: 'Requests', href: '/requests', icon: Inbox },
-    { name: 'Add Food', href: '/post-food', icon: Plus },
-    { name: 'Manage Posts', href: '/manage-posts', icon: Settings }
+    { name: t('nav.dashboard'), href: '/dashboard', icon: MapPin, id: 'Dashboard' },
+    { name: t('nav.requests'), href: '/requests', icon: Inbox, id: 'Requests' },
+    { name: t('nav.addFood'), href: '/post-food', icon: Plus, id: 'AddFood' },
+    { name: t('healthAdvisor.title'), href: '/food-scanner', icon: HeartPulse, id: 'HealthAdvisor' },
+    { name: t('nav.managePosts'), href: '/manage-posts', icon: Settings, id: 'ManagePosts' }
   ];
 
   return (
     <div className="min-h-screen overflow-x-hidden flex flex-col">
       {/* Navigation Header */}
-      <motion.header 
-        initial={{ y: -20, opacity: 0 }} 
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
         className="glass-card mx-4 mt-4 mb-6"
@@ -50,16 +56,15 @@ export default function Layout({ children }: LayoutProps) {
               {navigation.map(item => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
-                const showRequestsBadge = item.name === 'Requests' && hasPendingRequests;
+                const showRequestsBadge = item.id === 'Requests' && hasPendingRequests;
                 return (
-                  <Link 
-                    key={item.name} 
-                    to={item.href} 
-                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
-                      isActive 
-                        ? 'bg-primary text-primary-foreground shadow-md' 
-                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                    }`}
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${isActive
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                     <span>{item.name}</span>
@@ -97,25 +102,49 @@ export default function Layout({ children }: LayoutProps) {
                     className="flex items-center gap-2.5 cursor-pointer rounded-lg py-2.5 px-3 font-medium"
                   >
                     <User className="w-4 h-4" />
-                    <span>Show Profile</span>
+                    <span>{t('nav.profile')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={signOut}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setLogoutDialogOpen(true);
+                    }}
                     className="flex items-center gap-2.5 cursor-pointer text-destructive focus:text-destructive rounded-lg py-2.5 px-3 font-medium"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Log Out</span>
+                    <span>{t('nav.logout')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* Logout Confirmation Dialog */}
+              <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Log out of NourishNet?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('nav.logout')}? You'll need to sign in again.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={signOut}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {t('nav.logout')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>
       </motion.header>
 
       {/* Mobile Navigation */}
-      <motion.nav 
-        initial={{ y: 20, opacity: 0 }} 
+      <motion.nav
+        initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
         className="md:hidden fixed bottom-4 left-4 right-4 z-50"
@@ -125,16 +154,15 @@ export default function Layout({ children }: LayoutProps) {
             {navigation.map(item => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
-              const showRequestsBadge = item.name === 'Requests' && hasPendingRequests;
+              const showRequestsBadge = item.id === 'Requests' && hasPendingRequests;
               return (
-                <Link 
-                  key={item.name} 
-                  to={item.href} 
-                  className={`relative flex flex-col items-center gap-1 p-2.5 rounded-xl transition-all duration-200 min-w-[60px] ${
-                    isActive 
-                      ? 'bg-primary text-primary-foreground shadow-md' 
-                      : 'text-muted-foreground hover:text-foreground active:bg-accent'
-                  }`}
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`relative flex flex-col items-center gap-1 p-2.5 rounded-xl transition-all duration-200 min-w-[60px] ${isActive
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'text-muted-foreground hover:text-foreground active:bg-accent'
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-[10px] font-medium">{item.name}</span>

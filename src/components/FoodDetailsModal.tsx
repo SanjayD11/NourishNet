@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { MapPin, Clock, Navigation, Phone, MessageCircle, User, Calendar, Tag, E
 import { format } from 'date-fns';
 import FoodImageCarousel from '@/components/FoodImageCarousel';
 import DynamicTranslation from '@/components/DynamicTranslation';
+import { useLanguage } from '@/providers/LanguageProvider';
 
 interface FoodPost {
   id: string;
@@ -79,15 +80,17 @@ export default function FoodDetailsModal({
   userRequests,
   requestingPosts
 }: FoodDetailsModalProps) {
+  const { t } = useLanguage();
+
   if (!post) return null;
 
   const formatTimeAgo = (dateString: string) => {
     const now = new Date();
     const postDate = new Date(dateString);
     const diffInHours = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60 * 60));
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    return `${Math.floor(diffInHours / 24)}d ago`;
+    if (diffInHours < 1) return t('time.justNow');
+    if (diffInHours < 24) return `${diffInHours} ${t('time.hoursAgo')}`;
+    return `${Math.floor(diffInHours / 24)} ${t('time.daysAgo')}`;
   };
 
   const handleGetDirections = () => {
@@ -108,17 +111,11 @@ export default function FoodDetailsModal({
   const isRequesting = requestingPosts.has(post.id);
 
   return (
-    <AnimatePresence>
+    <>
       {isOpen && (
         <Dialog open={isOpen} onOpenChange={onClose}>
           <DialogContent className="w-full max-w-[95vw] sm:max-w-3xl lg:max-w-6xl max-h-[95vh] overflow-y-auto p-0">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-              className="glass-card border-0"
-            >
+            <div className="glass-card border-0">
               {/* Header */}
               <DialogHeader className="p-4 sm:p-6 pb-0 border-b border-border/50">
                 <div className="flex flex-col gap-3">
@@ -139,7 +136,7 @@ export default function FoodDetailsModal({
                     {post.best_before && (
                       <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
                         <AlertTriangle className="w-4 h-4" />
-                        <span>Best before {format(new Date(post.best_before), 'PPP')}</span>
+                        <span>{t('managePosts.bestBefore')} {format(new Date(post.best_before), 'PPP')}</span>
                       </div>
                     )}
                   </div>
@@ -162,7 +159,7 @@ export default function FoodDetailsModal({
                       fallbackImage={post.image_url}
                       title={post.food_title}
                     />
-                    
+
                     {/* Floating Status Badge */}
                     <TooltipProvider>
                       <Tooltip>
@@ -275,12 +272,12 @@ export default function FoodDetailsModal({
                           </div>
                         </div>
                       </div>
-                      
+
                       <motion.div
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <Button 
+                        <Button
                           onClick={handleGetDirections}
                           className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-300"
                           size="lg"
@@ -290,7 +287,7 @@ export default function FoodDetailsModal({
                           <ExternalLink className="w-4 h-4 ml-2" />
                         </Button>
                       </motion.div>
-                      
+
                       <div className="text-center">
                         <p className="text-xs text-muted-foreground">
                           🗺️ Opens in Google Maps
@@ -314,7 +311,7 @@ export default function FoodDetailsModal({
                     </CardHeader>
                     <CardContent className="space-y-5 pt-4">
                       {/* Provider Profile Section */}
-                      <motion.div 
+                      <motion.div
                         className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-background/80 to-accent/20 border border-border/30"
                         whileHover={{ scale: 1.01 }}
                         transition={{ duration: 0.2 }}
@@ -353,7 +350,7 @@ export default function FoodDetailsModal({
                           </div>
                           <h4 className="font-semibold text-foreground">Contact Options</h4>
                         </div>
-                        
+
                         {(post.profiles?.phone_number || post.profiles?.whatsapp_number) ? (
                           <div className="grid gap-3">
                             {post.profiles?.phone_number && (
@@ -488,17 +485,17 @@ export default function FoodDetailsModal({
                     </>
                   )}
                 </Button>
-                
+
                 <p className="text-xs text-muted-foreground text-center mt-3">
                   By requesting this food, you agree to pick it up at the specified location and time.
                   <br />
                   <span className="text-primary/80">Contact options available via provider profile.</span>
                 </p>
               </motion.div>
-            </motion.div>
+            </div>
           </DialogContent>
         </Dialog>
       )}
-    </AnimatePresence>
+    </>
   );
 }

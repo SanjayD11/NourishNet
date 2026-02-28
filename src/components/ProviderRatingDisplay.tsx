@@ -47,7 +47,7 @@ export function ProviderRatingDisplay({ providerId, showBreakdown = false, compa
         .eq('user_id', providerId)
         .single();
 
-      // Fetch rating distribution from feedback
+      // Fetch rating distribution from feedback (giver_id = food provider in DB)
       const { data: feedbackData } = await supabase
         .from('feedback')
         .select('rating')
@@ -97,7 +97,7 @@ export function ProviderRatingDisplay({ providerId, showBreakdown = false, compa
           .limit(5);
 
         if (reviewsData) {
-          // Fetch reviewer names
+          // Fetch reviewer names (receiver_id = food receiver / the person who rated)
           const reviewerIds = reviewsData.map((r: any) => r.receiver_id);
           const { data: reviewerProfiles } = await supabase
             .from('profiles')
@@ -188,11 +188,10 @@ export function ProviderRatingDisplay({ providerId, showBreakdown = false, compa
             {[1, 2, 3, 4, 5].map((star) => (
               <Star
                 key={star}
-                className={`w-4 h-4 ${
-                  star <= Math.round(stats.averageRating)
-                    ? 'fill-yellow-400 text-yellow-400'
-                    : 'text-muted-foreground/30'
-                }`}
+                className={`w-4 h-4 ${star <= Math.round(stats.averageRating)
+                  ? 'fill-yellow-400 text-yellow-400'
+                  : 'text-muted-foreground/30'
+                  }`}
               />
             ))}
           </div>
@@ -252,11 +251,10 @@ export function ProviderRatingDisplay({ providerId, showBreakdown = false, compa
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                               key={star}
-                              className={`w-3 h-3 ${
-                                star <= review.rating
-                                  ? 'fill-yellow-400 text-yellow-400'
-                                  : 'text-muted-foreground/30'
-                              }`}
+                              className={`w-3 h-3 ${star <= review.rating
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-muted-foreground/30'
+                                }`}
                             />
                           ))}
                         </div>
