@@ -1,78 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NourishNet - Share Food, Reduce Waste</title>
-    <meta name="description" content="NourishNet connects communities to share surplus food and reduce waste" />
-    <meta name="author" content="NourishNet" />
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/leaf_pfp.png" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NourishNet - Share Food, Reduce Waste</title>
+  <meta name="description" content="NourishNet connects communities to share surplus food and reduce waste" />
+  <meta name="author" content="NourishNet" />
 
-    <!-- Open Graph / Social -->
-    <meta property="og:title" content="NourishNet" />
-    <meta property="og:description" content="Share Food, Reduce Waste" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/leaf_pfp.png" />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  <!-- PWA -->
+  <meta name="theme-color" content="#38B2AC" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NourishNet" />
+  <link rel="apple-touch-icon" href="/pwa-icon-192.png" />
 
-    <!-- Hide Google Translate widget completely -->
-    <style>
-      .goog-te-banner-frame, .skiptranslate, #goog-gt-tt, .goog-te-balloon-frame {
-        display: none !important;
-      }
-      body { top: 0 !important; }
-      .goog-text-highlight { background: none !important; box-shadow: none !important; }
-    </style>
-  </head>
+  <!-- Open Graph / Social -->
+  <meta property="og:title" content="NourishNet" />
+  <meta property="og:description" content="Share Food, Reduce Waste" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
-  <body>
-    <div id="root"></div>
-    <div id="google_translate_element" style="display:none"></div>
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@lovable_dev" />
+  <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
-    <!-- Main Vite entry -->
-    <script type="module" src="/src/main.tsx"></script>
+  <!-- Hide Google Translate widget completely -->
+  <style>
+    .goog-te-banner-frame,
+    .skiptranslate,
+    #goog-gt-tt,
+    .goog-te-balloon-frame {
+      display: none !important;
+    }
 
-    <!-- Google Translate -->
-    <script>
-      function googleTranslateElementInit() {
-        if (!window.google || !window.google.translate) return;
+    body {
+      top: 0 !important;
+    }
 
-        new google.translate.TranslateElement({
-          pageLanguage: 'en',
-          includedLanguages: 'en,ta,hi',
-          autoDisplay: false
-        }, 'google_translate_element');
-      }
+    .goog-text-highlight {
+      background: none !important;
+      box-shadow: none !important;
+    }
+  </style>
+</head>
 
-      // Global SPA-safe language switcher
-      window.changeLanguage = function(lang) {
-        localStorage.setItem('nourishnet_lang', lang);
+<body>
+  <div id="root"></div>
+  <div id="google_translate_element" style="display:none"></div>
 
-        var waitForGoogle = setInterval(function() {
-          var select = document.querySelector('.goog-te-combo');
-          if (select) {
-            select.value = lang;
-            select.dispatchEvent(new Event('change'));
-            clearInterval(waitForGoogle);
-          }
-        }, 300);
+  <!-- Main Vite entry -->
+  <script type="module" src="/src/main.tsx"></script>
 
-        setTimeout(function() { clearInterval(waitForGoogle); }, 8000);
-      };
+  <!-- Google Translate -->
+  <script>
+    function googleTranslateElementInit() {
+      if (!window.google || !window.google.translate) return;
 
-      // Restore language on load
-      window.addEventListener('load', function() {
-        var savedLang = localStorage.getItem('nourishnet_lang');
-        if (savedLang && savedLang !== 'en') {
-          window.changeLanguage(savedLang);
+      new google.translate.TranslateElement({
+        pageLanguage: 'en',
+        includedLanguages: 'en,ta,hi',
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+
+    // Global SPA-safe language switcher
+    window.changeLanguage = function (lang) {
+      localStorage.setItem('nourishnet_lang', lang);
+
+      var waitForGoogle = setInterval(function () {
+        var select = document.querySelector('.goog-te-combo');
+        if (select) {
+          select.value = lang;
+          select.dispatchEvent(new Event('change'));
+          clearInterval(waitForGoogle);
         }
-      });
-    </script>
-    <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
-  </body>
+      }, 300);
+
+      setTimeout(function () { clearInterval(waitForGoogle); }, 8000);
+    };
+
+    // Restore language on load
+    window.addEventListener('load', function () {
+      var savedLang = localStorage.getItem('nourishnet_lang');
+      if (savedLang && savedLang !== 'en') {
+        window.changeLanguage(savedLang);
+      }
+    });
+  </script>
+  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
+</body>
+
 </html>
