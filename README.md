@@ -12,7 +12,7 @@
   <a href="#-features"><img src="https://img.shields.io/badge/Features-12+-38B2AC?style=for-the-badge" alt="Features" /></a>
   <a href="#-tech-stack"><img src="https://img.shields.io/badge/Stack-React_+_Supabase-61DAFB?style=for-the-badge" alt="Tech Stack" /></a>
   <a href="#-ai-powered"><img src="https://img.shields.io/badge/AI-Vision_Scanner-FF6F61?style=for-the-badge" alt="AI Powered" /></a>
-  <a href="https://github.com/SanjayD11/NourishNet/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" /></a>
+  <a href="#-progressive-web-app-pwa"><img src="https://img.shields.io/badge/PWA-Installable-5A0FC8?style=for-the-badge" alt="PWA" /></a>
 </p>
 
 <p align="center">
@@ -41,9 +41,9 @@
 - [Deployment](#-deployment)
 - [Multilingual Support](#-multilingual-support)
 - [Screenshots](#-screenshots)
+- [Progressive Web App (PWA)](#-progressive-web-app-pwa)
 - [Roadmap](#-roadmap)
 - [Contributing](#-contributing)
-- [License](#-license)
 - [Author](#-author)
 
 ---
@@ -89,6 +89,7 @@ NourishNet directly addresses this crisis by creating a hyperlocal food-sharing 
 - **Dark/Light Theme** — Seamless theme switching with nature-inspired color palettes.
 - **Fully Responsive** — Pixel-perfect layouts from mobile (320px) to ultrawide (2560px+) with a custom floating bottom navigation capsule.
 - **Framer Motion Animations** — Smooth GPU-accelerated transitions, fade-ups, and scale-ins throughout the app.
+- **Installable PWA** — Add to home screen on any device. Works offline with smart caching strategies.
 
 ---
 
@@ -143,6 +144,7 @@ NourishNet integrates **two independent AI modules** powered by the **Pollinatio
 | **Pollinations AI** | Vision API for Food Safety & Health Analysis |
 | **Vercel** | Hosting & Deployment |
 | **Leaflet** | Interactive Maps |
+| **Workbox (vite-plugin-pwa)** | Service Worker & Offline Caching |
 
 ---
 
@@ -312,6 +314,31 @@ Translations are **instant** — no page reloads, no layout shifts. Every string
 
 ---
 
+## 📲 Progressive Web App (PWA)
+
+NourishNet is a fully **installable PWA** — it works like a native app on any device!
+
+### ✨ PWA Features
+- **Install to Home Screen** — Tap "Add to Home Screen" in your browser to install NourishNet as a standalone app.
+- **Offline Support** — Smart caching strategies ensure core pages load even without internet.
+- **Auto-Update** — The service worker silently updates when new versions are deployed.
+- **Fullscreen Standalone Mode** — Launches without browser chrome, just like a native app.
+
+### ⚡ Caching Strategy
+| Resource | Strategy | Cache Duration |
+|---|---|---|
+| Static Assets (JS, CSS, HTML) | **Precache** | Updated on deploy |
+| Supabase API Responses | **Network First** | 5 minutes fallback |
+| Supabase Storage Images | **Cache First** | 7 days |
+| Google Fonts | **Cache First** | 1 year |
+
+### 📱 How to Install
+1. Open NourishNet in **Chrome/Safari** on your phone.
+2. Tap the browser menu (⋮) → **"Add to Home Screen"** or **"Install App"**.
+3. NourishNet appears on your home screen with the 🌿 leaf icon!
+
+---
+
 ## 📸 Screenshots
 
 <details>
@@ -349,7 +376,8 @@ Translations are **instant** — no page reloads, no layout shifts. Every string
 - [x] Provider ratings & reviews
 - [x] Interactive map views
 - [x] Avatar upload & profile customization
-- [ ] Push notifications (PWA)
+- [x] Progressive Web App (PWA) with offline caching
+- [ ] Push notifications
 - [ ] In-app chat between providers and requesters
 - [ ] Food donation analytics dashboard
 - [ ] Community leaderboard & badges
@@ -380,12 +408,6 @@ git push origin feature/amazing-feature
 - Use `shadcn/ui` components where possible.
 - Write meaningful commit messages using [Conventional Commits](https://www.conventionalcommits.org/).
 - Ensure your changes work on both mobile and desktop.
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 ---
 
