@@ -6,10 +6,11 @@
  */
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "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";
+const OPENROUTER_API_KEY = (import.meta.env.VITE_OPENROUTER_API_KEY || "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").toString().trim().replace(/['"]/g, '');
 
 // Best Free Models
-const PRIMARY_MODEL = "google/gemini-flash-1.5-8b:free";
+const PRIMARY_MODEL = "meta-llama/llama-3.2-11b-vision-instruct:free";
+const SECONDARY_MODEL = "google/gemini-flash-1.5-8b:free";
 const FALLBACK_MODEL = "mistralai/pixtral-12b:free"; // Pixtral is great for reading labels/mold
 
 const MAX_IMAGE_DIMENSION = 768;
@@ -134,7 +135,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
 export async function scanFoodImage(file: File): Promise<FoodScanResult> {
     const dataUri = await compressImageForApi(file);
     let lastError: Error | null = null;
-    const models = [PRIMARY_MODEL, FALLBACK_MODEL, "openrouter/auto:free"];
+    const models = [PRIMARY_MODEL, SECONDARY_MODEL, FALLBACK_MODEL, "openrouter/auto:free"];
 
     for (const modelId of models) {
         for (let i = 0; i <= MAX_RETRIES; i++) {

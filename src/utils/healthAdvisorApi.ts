@@ -9,11 +9,13 @@
  */
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "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";
+const OPENROUTER_API_KEY = (import.meta.env.VITE_OPENROUTER_API_KEY || "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").toString().trim().replace(/['"]/g, '');
 
 // Best Free Models (OpenRouter IDs)
-const PRIMARY_MODEL = "google/gemini-flash-1.5-8b:free";
-const FALLBACK_MODEL = "meta-llama/llama-3.2-11b-vision-instruct:free";
+const PRIMARY_MODEL = "meta-llama/llama-3.2-11b-vision-instruct:free";
+const SECONDARY_MODEL = "google/gemini-flash-1.5-8b:free";
+const FALLBACK_MODEL = "google/gemini-2.0-flash-exp:free";
+const AUTO_MODEL = "openrouter/auto:free";
 
 const MAX_IMAGE_DIMENSION = 768;
 const JPEG_QUALITY = 0.6;
@@ -231,8 +233,8 @@ export async function analyzeHealthRisk(file: File): Promise<HealthAdvisorResult
 
     let lastError: Error | null = null;
     
-    // Attempt with different models if one fails
-    const modelsToTry = [PRIMARY_MODEL, FALLBACK_MODEL, "openrouter/auto:free"];
+    // Attempt with different models if one fails - Including best free ones
+    const modelsToTry = [PRIMARY_MODEL, SECONDARY_MODEL, FALLBACK_MODEL, AUTO_MODEL];
 
     for (const modelId of modelsToTry) {
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
