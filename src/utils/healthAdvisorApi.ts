@@ -5,8 +5,8 @@
  * workflow: 2-Step analysis (Phi-3.5 Vision -> Gemma-2-27b Chat)
  */
 
-const NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
-const NVIDIA_API_KEY = (import.meta.env.VITE_NVIDIA_API_KEY || "").toString().trim();
+const NVIDIA_API_URL = "/api/nvidia";
+// API Key is now hidden and injected securely by the backend proxy.
 
 // Optimized Model Stack
 const VISION_MODEL = "microsoft/phi-3.5-vision-instruct";
@@ -129,7 +129,6 @@ async function callNvidiaNIM(model: string, messages: any[]) {
     const response = await fetchWithTimeout(NVIDIA_API_URL, {
         method: "POST",
         headers: {
-            "Authorization": `Bearer ${NVIDIA_API_KEY}`,
             "Content-Type": "application/json"
         },
         body: JSON.stringify({ model, messages, temperature: 0.2, max_tokens: 1024 })
