@@ -114,8 +114,7 @@ export async function scanFoodImage(file: File): Promise<FoodScanResult> {
     // Step 2: Safety Reasoning
     console.log("[NVIDIA NIM] Step 2: Safety Reasoning (Gemma)");
     const safetyJson = await callNvidiaNIM(REASONING_MODEL, [
-        { role: "system", content: FOOD_SAFETY_SYSTEM_PROMPT },
-        { role: "user", content: `Visual Report: ${description}\nProvide JSON.` }
+        { role: "user", content: `${FOOD_SAFETY_SYSTEM_PROMPT}\n\nVisual Report: ${description}\nProvide strictly valid JSON.` }
     ]);
 
     return parseScanResponse(safetyJson);

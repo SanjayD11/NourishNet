@@ -158,8 +158,7 @@ export async function analyzeHealthRisk(file: File): Promise<HealthAdvisorResult
     // Step 2: Reasoning (Gemma)
     console.log("[NVIDIA NIM] Step 2: Health Reasoning (Gemma)");
     const healthJson = await callNvidiaNIM(REASONING_MODEL, [
-        { role: "system", content: HEALTH_ADVISOR_SYSTEM_PROMPT },
-        { role: "user", content: `Food Description: ${description}\nAnalyze and return JSON.` }
+        { role: "user", content: `${HEALTH_ADVISOR_SYSTEM_PROMPT}\n\nFood Description: ${description}\nAnalyze and return strictly valid JSON.` }
     ]);
 
     return parseHealthResponse(healthJson);
