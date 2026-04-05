@@ -160,6 +160,8 @@ export default function FoodScanner() {
                         maxImages={3}
                         maxSizeMB={5}
                         maxResolution={1920}
+                        emptyStateText="Upload clear photos of your food for AI health analysis"
+                        tipText="Tip: Well-lit photos allow the AI to accurately identify ingredients and measure health risks."
                     />
 
                     <div className="flex gap-3">

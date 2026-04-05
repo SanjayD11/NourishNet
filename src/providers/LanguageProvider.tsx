@@ -146,8 +146,8 @@ const translations: Record<Language, Record<string, string>> = {
     // Health Advisor
     'healthAdvisor.title': 'AI Health Advisor',
     'healthAdvisor.desc': 'Get instant AI-powered health insights from food images.',
-    'healthAdvisor.upload': 'Upload Food Images',
-    'healthAdvisor.uploadDesc': 'Take a photo or upload images of food to analyze (max 3)',
+    'healthAdvisor.upload': 'Scan Food for AI Analysis',
+    'healthAdvisor.uploadDesc': 'Take a clear photo of your food to instantly generate personalized health data (max 3)',
     'healthAdvisor.analyzing': 'Analyzing...',
     'healthAdvisor.analyze': 'Analyze Health Risk',
     'healthAdvisor.results': 'Health Analysis Results',

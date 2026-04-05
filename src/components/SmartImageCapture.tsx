@@ -18,6 +18,8 @@ interface SmartImageCaptureProps {
   maxImages?: number;
   maxSizeMB?: number;
   maxResolution?: number;
+  emptyStateText?: string;
+  tipText?: string;
 }
 
 // Detect if device is mobile
@@ -216,6 +218,8 @@ export default function SmartImageCapture({
   maxImages = 3,
   maxSizeMB = 5,
   maxResolution = 1920,
+  emptyStateText = "Add photos of your food to help others see what you're sharing",
+  tipText = "Tip: Capturing photos in real time using your phone camera helps build trust in food authenticity.",
 }: SmartImageCaptureProps) {
   const { toast } = useToast();
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -421,7 +425,7 @@ export default function SmartImageCapture({
 
                 <p className="text-sm text-muted-foreground mb-4">
                   {images.length === 0
-                    ? "Add photos of your food to help others see what you're sharing"
+                    ? emptyStateText
                     : `Add ${maxImages - images.length} more photo${maxImages - images.length > 1 ? 's' : ''}`}
                 </p>
 
@@ -458,10 +462,9 @@ export default function SmartImageCapture({
                   </Button>
                 )}
 
-                {/* Trust tip */}
                 <p className="group/tip mt-4 text-xs text-muted-foreground/80 flex items-center justify-center gap-1.5 cursor-default">
                   <Camera className="w-3.5 h-3.5 text-primary/60 animate-pulse group-hover/tip:text-primary group-hover/tip:scale-110 group-hover/tip:rotate-12 group-hover/tip:animate-none transition-all duration-300" />
-                  <span>Tip: Capturing photos in real time using your phone camera helps build trust in food authenticity.</span>
+                  <span>{tipText}</span>
                 </p>
               </>
             )}
