@@ -28,3 +28,8 @@ __pycache__/
 *.pyc
 *.pyo
 ai/.env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
