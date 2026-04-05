@@ -1,63 +1,38 @@
 /**
- * Food Safety Scanner API Utility
- * ================================
- * Calls OpenRouter Vision API to analyze food images for safety.
- * Includes image compression, retry logic, and fallback support.
+ * Food Safety Scanner API Utility (NVIDIA NIM Edition)
+ * ==================================================
+ * workflow: 2-Step analysis (Phi-3.5 Vision -> Gemma-2-27b Reasoning)
  */
 
-const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const OPENROUTER_API_KEY = (import.meta.env.VITE_OPENROUTER_API_KEY || "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").toString().trim().replace(/['"]/g, '');
+const NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
+const NVIDIA_API_KEY = (import.meta.env.VITE_NVIDIA_API_KEY || "").toString().trim();
 
-// Best Free Models
-const PRIMARY_MODEL = "meta-llama/llama-3.2-11b-vision-instruct:free";
-const SECONDARY_MODEL = "google/gemini-flash-1.5-8b:free";
-const FALLBACK_MODEL = "mistralai/pixtral-12b:free"; // Pixtral is great for reading labels/mold
+const VISION_MODEL = "microsoft/phi-3.5-vision-instruct";
+const REASONING_MODEL = "google/gemma-2-27b-it";
 
-const MAX_IMAGE_DIMENSION = 768;
-const JPEG_QUALITY = 0.6;
+const MAX_IMAGE_DIMENSION = 700; // conservative for 180kb base64 limit
+const JPEG_QUALITY = 0.5;
 const REQUEST_TIMEOUT_MS = 60000;
-const MAX_RETRIES = 2;
 
-const FOOD_SAFETY_SYSTEM_PROMPT = `You are a Food Safety AI Scanner integrated inside a food-sharing platform.
+const FOOD_SAFETY_SYSTEM_PROMPT = `You are a Food Safety AI for NourishNet.
+Analyze the food description and return a JSON safety report.
 
-Your job is to analyze uploaded food images and return structured, reliable, risk-based output.
+RULES:
+- Detect visible spoilage (mold, slime, discoloration).
+- Assess overall visual Risk Level (LOW/MEDIUM/HIGH).
+- Provide a confidence level and a user-facing safety message.
 
-IMPORTANT RULES:
-- Only analyze what is visually observable.
-- Do NOT guess invisible contamination.
-- Do NOT hallucinate expiry dates if not visible.
-- If information is unclear, say "Not Visible".
-- Never guarantee food safety.
-- Provide risk estimation only based on visual evidence.
-
-TASKS:
-
-1. Identify the food item (short name).
-2. Detect visible spoilage indicators:
-   - Mold (white/green/black fuzzy spots)
-   - Discoloration
-   - Slimy texture
-   - Excess moisture leakage
-   - Swollen packaging
-   - Torn or damaged packaging
-3. Detect expiry or best-before date if clearly visible on packaging.
-4. Assess overall visual risk level (LOW / MEDIUM / HIGH).
-5. Provide short user-facing message.
-
-OUTPUT FORMAT (STRICT JSON ONLY):
-
+JSON FORMAT:
 {
-  "food_identified": "",
+  "food_identified": "Name",
   "expiry_date_visible": "Yes / No",
-  "detected_expiry_text": "",
-  "visible_issues": [],
+  "detected_expiry_text": "Date if any",
+  "visible_issues": ["Issue 1", "Issue 2"],
   "risk_level": "LOW / MEDIUM / HIGH",
   "confidence": "Low / Medium / High",
-  "user_message": ""
+  "user_message": "Safety advice"
 }
-
-If image quality is poor, reduce confidence.
-Never return explanations outside JSON.`;
+Return ONLY valid JSON.`;
 
 export interface FoodScanResult {
     food_identified: string;
@@ -69,10 +44,7 @@ export interface FoodScanResult {
     user_message: string;
 }
 
-/**
- * Image compression for API transmission
- */
-function compressImageForApi(file: File): Promise<string> {
+async function compressImageForApi(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -80,19 +52,14 @@ function compressImageForApi(file: File): Promise<string> {
             URL.revokeObjectURL(url);
             let { width, height } = img;
             if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
-                if (width > height) {
-                    height = Math.round((height * MAX_IMAGE_DIMENSION) / width);
-                    width = MAX_IMAGE_DIMENSION;
-                } else {
-                    width = Math.round((width * MAX_IMAGE_DIMENSION) / height);
-                    height = MAX_IMAGE_DIMENSION;
-                }
+                const ratio = Math.min(MAX_IMAGE_DIMENSION / width, MAX_IMAGE_DIMENSION / height);
+                width = Math.round(width * ratio);
+                height = Math.round(height * ratio);
             }
             const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
+            canvas.width = width; canvas.height = height;
             const ctx = canvas.getContext("2d");
-            if (!ctx) { reject(new Error("Canvas context error")); return; }
+            if (!ctx) return reject(new Error("Canvas context"));
             ctx.drawImage(img, 0, 0, width, height);
             resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
         };
@@ -101,72 +68,55 @@ function compressImageForApi(file: File): Promise<string> {
     });
 }
 
-function parseResponse(raw: string): FoodScanResult {
-    let text = raw.trim();
-    if (text.startsWith("```")) {
-        text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-    }
-    let parsed: any;
+function parseScanResponse(raw: string): FoodScanResult {
+    const text = raw.trim().replace(/^```json/, "").replace(/```$/, "").trim();
     try {
-        parsed = JSON.parse(text);
-    } catch {
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) parsed = JSON.parse(match[0]);
-        else throw new Error("JSON parse error");
-    }
-    return {
-        food_identified: String(parsed.food_identified || "Unknown"),
-        expiry_date_visible: String(parsed.expiry_date_visible || "No"),
-        detected_expiry_text: String(parsed.detected_expiry_text || "Not Visible"),
-        visible_issues: Array.isArray(parsed.visible_issues) ? parsed.visible_issues.map(String) : [],
-        risk_level: (parsed.risk_level === "LOW" || parsed.risk_level === "HIGH") ? parsed.risk_level : "MEDIUM",
-        confidence: String(parsed.confidence || "Medium") as any,
-        user_message: String(parsed.user_message || "Assessment incomplete."),
-    };
+        const parsed = JSON.parse(text);
+        return {
+            food_identified: parsed.food_identified || "Unknown",
+            expiry_date_visible: parsed.expiry_date_visible || "No",
+            detected_expiry_text: parsed.detected_expiry_text || "Not Visible",
+            visible_issues: Array.isArray(parsed.visible_issues) ? parsed.visible_issues : [],
+            risk_level: ["LOW", "MEDIUM", "HIGH"].includes(parsed.risk_level) ? parsed.risk_level : "MEDIUM",
+            confidence: parsed.confidence || "Medium",
+            user_message: parsed.user_message || "Assessment incomplete."
+        };
+    } catch { throw new Error("JSON parse failure"); }
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit, timeout: number) {
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeoutMs);
+    const id = setTimeout(() => controller.abort(), timeout);
     try { return await fetch(url, { ...options, signal: controller.signal }); }
     finally { clearTimeout(id); }
 }
 
-export async function scanFoodImage(file: File): Promise<FoodScanResult> {
-    const dataUri = await compressImageForApi(file);
-    let lastError: Error | null = null;
-    const models = [PRIMARY_MODEL, SECONDARY_MODEL, FALLBACK_MODEL, "openrouter/auto:free"];
+async function callNvidiaNIM(model: string, messages: any[]) {
+    const resp = await fetchWithTimeout(NVIDIA_API_URL, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${NVIDIA_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, messages, temperature: 0.2, max_tokens: 1024 })
+    }, REQUEST_TIMEOUT_MS);
+    if (!resp.ok) throw new Error(`NIM Error ${resp.status}`);
+    const data = await resp.json();
+    return data.choices[0].message.content;
+}
 
-    for (const modelId of models) {
-        for (let i = 0; i <= MAX_RETRIES; i++) {
-            try {
-                if (i > 0) await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i - 1)));
-                const response = await fetchWithTimeout(OPENROUTER_API_URL, {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": window.location.origin,
-                        "X-Title": "NourishNet Food Scanner",
-                    },
-                    body: JSON.stringify({
-                        model: modelId,
-                        messages: [
-                            { role: "system", content: FOOD_SAFETY_SYSTEM_PROMPT },
-                            { role: "user", content: [
-                                { type: "text", text: "Analyze this food for safety. JSON only." },
-                                { type: "image_url", image_url: { url: dataUri } }
-                            ]}
-                        ]
-                    }),
-                }, REQUEST_TIMEOUT_MS);
-                if (!response.ok) throw new Error(`API error ${response.status}`);
-                const data = await response.json();
-                const content = data?.choices?.[0]?.message?.content;
-                if (!content) throw new Error("Empty response");
-                return parseResponse(content);
-            } catch (err: any) { lastError = err; if (err.name === "AbortError") break; }
-        }
-    }
-    throw lastError || new Error("Scanner failed");
+export async function scanFoodImage(file: File): Promise<FoodScanResult> {
+    const base64Image = await compressImageForApi(file);
+
+    // Step 1: Vision
+    console.log("[NVIDIA NIM] Step 1: Safety Vision Analysis (Phi-3.5)");
+    const description = await callNvidiaNIM(VISION_MODEL, [
+        { role: "user", content: `Examine this food image for spoilage indicators like mold, discoloration, or texture issues. Describe every visible detail. <img src="${base64Image}" />` }
+    ]);
+
+    // Step 2: Safety Reasoning
+    console.log("[NVIDIA NIM] Step 2: Safety Reasoning (Gemma)");
+    const safetyJson = await callNvidiaNIM(REASONING_MODEL, [
+        { role: "system", content: FOOD_SAFETY_SYSTEM_PROMPT },
+        { role: "user", content: `Visual Report: ${description}\nProvide JSON.` }
+    ]);
+
+    return parseScanResponse(safetyJson);
 }
