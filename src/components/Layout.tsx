@@ -36,111 +36,121 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen overflow-x-hidden flex flex-col">
-      {/* Navigation Header */}
-      <motion.header
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-        className="glass-card mx-3 mt-3 sm:mx-4 sm:mt-4 mb-4 sm:mb-6"
-      >
-        <div className="px-3 py-3 sm:px-6 sm:py-4">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 sm:gap-3 group flex-shrink-0">
-              <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
-                <Leaf className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-foreground tracking-tight whitespace-nowrap" style={{ fontSize: 'clamp(1rem, 3vw, 1.5rem)' }}>NourishNet</span>
-            </Link>
+      {/* Navigation Header - Premium Floating Dock */}
+      <div className="fixed top-0 left-0 right-0 z-50 px-3 pt-3 sm:px-6 sm:pt-6 pointer-events-none">
+        <motion.header
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="glass-card mx-auto max-w-7xl pointer-events-auto relative overflow-hidden"
+          style={{ 
+            backdropFilter: 'blur(20px)',
+            border: '1px solid hsla(var(--glass-border) / 0.5)',
+            boxShadow: '0 8px 32px -4px hsla(var(--glass-shadow) / 0.1)'
+          }}
+        >
+          <div className="px-4 py-2.5 sm:px-6 sm:py-3.5">
+            <div className="flex items-center justify-between gap-4">
+              <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0 relative z-10">
+                <div className="flex-shrink-0 flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-lg shadow-primary/20 group-hover:shadow-primary/30 transition-all duration-500 group-hover:scale-105 group-hover:rotate-3">
+                  <Leaf className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+                </div>
+                <span className="font-extrabold text-foreground tracking-tight whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70" style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)' }}>
+                  NourishNet
+                </span>
+              </Link>
 
-            <nav className="hidden md:flex items-center gap-1">
-              {navigation.map(item => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                const showRequestsBadge = item.id === 'Requests' && hasPendingRequests;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${isActive
-                      ? 'bg-primary text-primary-foreground shadow-md'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              <nav className="hidden md:flex items-center gap-1.5 relative px-1 py-1 bg-muted/30 rounded-2xl border border-muted/20">
+                {navigation.map(item => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.href;
+                  const showRequestsBadge = item.id === 'Requests' && hasPendingRequests;
+                  
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.href}
+                      className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 group z-10 ${
+                        isActive ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
                       }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                    {showRequestsBadge && (
-                      <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-primary ring-2 ring-card" />
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="flex items-center gap-0 sm:gap-3 ml-auto">
-              <div className="scale-[0.85] sm:scale-100 flex items-center justify-center"><LanguageSelector /></div>
-              <div className="scale-[0.85] sm:scale-100 flex items-center justify-center -ml-1 sm:ml-0"><ThemeToggle /></div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-transform duration-200 hover:scale-105 ml-0.5 sm:ml-1"
-                  >
-                    <Avatar className="w-8 h-8 sm:w-9 sm:h-9">
-                      <AvatarImage src="" />
-                      <AvatarFallback>
-                        {user?.user_metadata?.full_name?.[0] || user?.email?.[0] || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48 rounded-xl shadow-lg border-2 bg-card mt-2 p-1.5">
-                  <DropdownMenuItem
-                    onClick={() => navigate('/profile')}
-                    className="flex items-center gap-2.5 cursor-pointer rounded-lg py-2.5 px-3 font-medium"
-                  >
-                    <User className="w-4 h-4" />
-                    <span>{t('nav.profile')}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setLogoutDialogOpen(true);
-                    }}
-                    className="flex items-center gap-2.5 cursor-pointer text-destructive focus:text-destructive rounded-lg py-2.5 px-3 font-medium"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>{t('nav.logout')}</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Logout Confirmation Dialog */}
-              <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Log out of NourishNet?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t('nav.logout')}? You'll need to sign in again.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={signOut}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      {t('nav.logout')}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      {isActive && (
+                        <motion.div
+                          layoutId="nav-pill"
+                          className="absolute inset-0 bg-primary rounded-xl shadow-md shadow-primary/20"
+                          transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                        />
+                      )}
+                      
+                      <Icon className={`w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110 ${isActive ? 'text-primary-foreground' : 'text-primary/70'}`} />
+                      <span className="relative z-10">{item.name}</span>
+                      
+                      {showRequestsBadge && (
+                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 z-20">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500 border-2 border-background shadow-sm" />
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="flex items-center gap-2 sm:gap-3.5 relative z-10 ml-auto md:ml-0">
+                <div className="flex items-center gap-1.5 p-1 bg-muted/30 rounded-xl border border-muted/10">
+                  <LanguageSelector />
+                  <div className="w-px h-4 bg-muted/40 mx-0.5 hidden sm:block" />
+                  <ThemeToggle />
+                </div>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="group relative flex items-center gap-2 p-0.5 rounded-full hover:bg-muted/30 transition-all duration-300 focus:outline-none"
+                    >
+                      <div className="relative">
+                        <Avatar className="w-9 h-9 sm:w-10 sm:h-10 border-2 border-transparent group-hover:border-primary/30 transition-all duration-300">
+                          <AvatarImage src="" />
+                          <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                            {user?.user_metadata?.full_name?.[0] || user?.email?.[0] || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full shadow-sm" />
+                      </div>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 rounded-2xl shadow-2xl border-muted/20 bg-card/95 backdrop-blur-xl mt-3 p-2 stagger-in">
+                    <DropdownMenuItem
+                      onClick={() => navigate('/profile')}
+                      className="flex items-center gap-3 cursor-pointer rounded-xl py-3 px-4 font-semibold hover:bg-primary/10 hover:text-primary transition-colors duration-200"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <span>{t('nav.profile')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setLogoutDialogOpen(true);
+                      }}
+                      className="flex items-center gap-3 cursor-pointer text-rose-500 focus:text-rose-600 rounded-xl py-3 px-4 font-semibold hover:bg-rose-500/10 transition-colors duration-200 mt-1"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                        <LogOut className="w-4 h-4" />
+                      </div>
+                      <span>{t('nav.logout')}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
-        </div>
-      </motion.header>
+        </motion.header>
+      </div>
+
+      <div className="h-20 sm:h-28" /> {/* Offset for fixed header */}
 
       {/* Mobile Navigation */}
       <motion.nav

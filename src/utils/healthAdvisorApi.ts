@@ -1,15 +1,19 @@
 /**
  * AI Health Advisor API Utility
  * ================================
- * Calls Pollinations.ai Vision API to analyze food images for health risks.
+ * Calls OpenRouter Vision API to analyze food images for health risks.
  * Returns structured health insights: diabetic risk, cholesterol impact,
- * weight gain potential, and personalized AI suggestions.
+ * weight gain potential, macronutrients, allergens, and personalized suggestions.
  * 
- * Completely independent from the food safety scanner used in Add Food.
+ * Performance: Uses Gemini 1.5 Flash (Free) with Llama 3.2 Vision (Free) as fallback.
  */
 
-const POLLINATIONS_API_URL = "https://gen.pollinations.ai/v1/chat/completions";
-const POLLINATIONS_API_KEY = "sk_bmnpBskVyDRvqKS8mykWHKyeekTqRSuY";
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "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";
+
+// Best Free Models (OpenRouter IDs)
+const PRIMARY_MODEL = "google/gemini-flash-1.5-8b:free";
+const FALLBACK_MODEL = "meta-llama/llama-3.2-11b-vision-instruct:free";
 
 const MAX_IMAGE_DIMENSION = 768;
 const JPEG_QUALITY = 0.6;
@@ -23,6 +27,8 @@ Your job is to analyze uploaded food images and return structured health-risk in
 IMPORTANT RULES:
 - Identify the food item from the image.
 - Estimate approximate calorie count per typical serving.
+- provide estimated Macronutrients (Protein, Net Carbs, Fats) in grams.
+- Detect common household Allergens (Dairy, Gluten, Peanuts, Shellfish, Eggs).
 - Assess health risks across 3 dimensions: Diabetic Risk, Cholesterol Impact, and Weight Gain potential.
 - Each risk should be rated as "LOW", "MODERATE", or "HIGH".
 - Provide a brief explanation (1 sentence) for each risk.
@@ -37,6 +43,12 @@ OUTPUT FORMAT (STRICT JSON ONLY):
   "food_name": "",
   "estimated_calories": 0,
   "serving_size": "",
+  "macros": {
+    "protein": 0,
+    "carbs": 0,
+    "fats": 0
+  },
+  "allergens": [],
   "diabetic_risk": {
     "level": "LOW / MODERATE / HIGH",
     "reason": ""
@@ -67,10 +79,18 @@ export interface WeightGainRisk extends HealthRiskLevel {
     percentage: number;
 }
 
+export interface Macronutrients {
+    protein: number;
+    carbs: number;
+    fats: number;
+}
+
 export interface HealthAdvisorResult {
     food_name: string;
     estimated_calories: number;
     serving_size: string;
+    macros: Macronutrients;
+    allergens: string[];
     diabetic_risk: HealthRiskLevel;
     cholesterol_impact: HealthRiskLevel;
     weight_gain_potential: WeightGainRisk;
@@ -157,11 +177,18 @@ function parseHealthResponse(raw: string): HealthAdvisorResult {
     const diabeticRisk = (parsed.diabetic_risk as Record<string, unknown>) || {};
     const cholesterolImpact = (parsed.cholesterol_impact as Record<string, unknown>) || {};
     const weightGain = (parsed.weight_gain_potential as Record<string, unknown>) || {};
+    const macros = (parsed.macros as Record<string, unknown>) || {};
 
     return {
         food_name: String(parsed.food_name || "Unknown Food"),
         estimated_calories: Number(parsed.estimated_calories) || 0,
         serving_size: String(parsed.serving_size || "1 serving"),
+        macros: {
+            protein: Number(macros.protein) || 0,
+            carbs: Number(macros.carbs) || 0,
+            fats: Number(macros.fats) || 0,
+        },
+        allergens: Array.isArray(parsed.allergens) ? parsed.allergens.map(String) : [],
         diabetic_risk: {
             level: normalizeLevel(diabeticRisk.level),
             reason: String(diabeticRisk.reason || "Unable to assess"),
@@ -196,75 +223,78 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
 }
 
 /**
- * Analyze a food image for health risks using Pollinations.ai Vision API.
+ * Analyze a food image for health risks using OpenRouter Vision API.
+ * Uses primary model with fallbacks.
  */
 export async function analyzeHealthRisk(file: File): Promise<HealthAdvisorResult> {
     const dataUri = await compressImageForApi(file);
 
     let lastError: Error | null = null;
+    
+    // Attempt with different models if one fails
+    const modelsToTry = [PRIMARY_MODEL, FALLBACK_MODEL, "openrouter/auto:free"];
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        try {
-            if (attempt > 0) {
-                await new Promise((r) => setTimeout(r, 1500 * Math.pow(2, attempt - 1)));
-            }
+    for (const modelId of modelsToTry) {
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                if (attempt > 0) {
+                    await new Promise((r) => setTimeout(r, 1500 * Math.pow(2, attempt - 1)));
+                }
 
-            const response = await fetchWithTimeout(
-                POLLINATIONS_API_URL,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${POLLINATIONS_API_KEY}`,
-                        "Content-Type": "application/json",
+                console.log(`[HealthAdvisor] Using model: ${modelId} (Attempt ${attempt + 1})`);
+
+                const response = await fetchWithTimeout(
+                    OPENROUTER_API_URL,
+                    {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+                            "Content-Type": "application/json",
+                            "HTTP-Referer": window.location.origin,
+                            "X-Title": "NourishNet Food Analysis",
+                        },
+                        body: JSON.stringify({
+                            model: modelId,
+                            temperature: 0.3,
+                            max_tokens: 1500,
+                            messages: [
+                                { role: "system", content: HEALTH_ADVISOR_SYSTEM_PROMPT },
+                                {
+                                    role: "user",
+                                    content: [
+                                        { type: "text", text: "Analyze this food image for health risks. Return ONLY a valid JSON object." },
+                                        { type: "image_url", image_url: { url: dataUri } },
+                                    ],
+                                },
+                            ],
+                        }),
                     },
-                    body: JSON.stringify({
-                        model: "openai-large",
-                        temperature: 0.3,
-                        max_tokens: 1500,
-                        messages: [
-                            { role: "system", content: HEALTH_ADVISOR_SYSTEM_PROMPT },
-                            {
-                                role: "user",
-                                content: [
-                                    { type: "text", text: "Analyze this food image for health risks. Return ONLY a valid JSON object with food_name, estimated_calories, serving_size, diabetic_risk, cholesterol_impact, weight_gain_potential, ai_suggestion, and nutrients_summary." },
-                                    { type: "image_url", image_url: { url: dataUri } },
-                                ],
-                            },
-                        ],
-                    }),
-                },
-                REQUEST_TIMEOUT_MS
-            );
+                    REQUEST_TIMEOUT_MS
+                );
 
-            if (!response.ok) {
-                const errorText = await response.text().catch(() => "");
-                throw new Error(`API error ${response.status}: ${errorText.slice(0, 200)}`);
+                if (!response.ok) {
+                    const errorJson = await response.json().catch(() => ({}));
+                    throw new Error(`OpenRouter error ${response.status}: ${JSON.stringify(errorJson)}`);
+                }
+
+                const data = await response.json();
+                const content = data?.choices?.[0]?.message?.content;
+
+                if (!content) {
+                    throw new Error("Empty response from OpenRouter");
+                }
+
+                return parseHealthResponse(content);
+            } catch (err: any) {
+                lastError = err;
+                console.warn(`[HealthAdvisor] Model ${modelId} Attempt ${attempt + 1} failed:`, err.message);
+                if (err.name === "AbortError") {
+                    break; // Move to next model if it timed out
+                }
             }
-
-            const data = await response.json();
-            console.log("[HealthAdvisor] API response:", JSON.stringify(data).slice(0, 500));
-
-            // Try multiple paths to extract content
-            const content = data?.choices?.[0]?.message?.content
-                || data?.choices?.[0]?.text
-                || data?.message?.content
-                || (typeof data === 'string' ? data : null);
-
-            if (!content) {
-                console.error("[HealthAdvisor] Full response structure:", JSON.stringify(data));
-                // If this is a retry-able empty response, continue to next attempt
-                throw new Error("Empty response from AI — retrying...");
-            }
-
-            return parseHealthResponse(content);
-        } catch (err: any) {
-            lastError = err;
-            if (err.name === "AbortError") {
-                throw new Error("Analysis timed out. Please try again.");
-            }
-            console.warn(`[HealthAdvisor] Attempt ${attempt + 1} failed:`, err.message);
         }
+        console.log(`[HealthAdvisor] Switching to fallback model due to error with ${modelId}`);
     }
 
-    throw lastError || new Error("Analysis failed after multiple attempts");
+    throw lastError || new Error("Analysis failed after multiple attempts with all models");
 }

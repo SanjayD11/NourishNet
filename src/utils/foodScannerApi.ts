@@ -1,12 +1,16 @@
 /**
  * Food Safety Scanner API Utility
  * ================================
- * Calls Pollinations.ai Vision API to analyze food images for safety.
- * Includes image compression, retry logic, and timeout handling.
+ * Calls OpenRouter Vision API to analyze food images for safety.
+ * Includes image compression, retry logic, and fallback support.
  */
 
-const POLLINATIONS_API_URL = "https://gen.pollinations.ai/v1/chat/completions";
-const POLLINATIONS_API_KEY = "sk_bmnpBskVyDRvqKS8mykWHKyeekTqRSuY";
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "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";
+
+// Best Free Models
+const PRIMARY_MODEL = "google/gemini-flash-1.5-8b:free";
+const FALLBACK_MODEL = "mistralai/pixtral-12b:free"; // Pixtral is great for reading labels/mold
 
 const MAX_IMAGE_DIMENSION = 768;
 const JPEG_QUALITY = 0.6;
@@ -35,11 +39,8 @@ TASKS:
    - Excess moisture leakage
    - Swollen packaging
    - Torn or damaged packaging
-3. Detect expiry or best-before date if clearly visible.
-4. Assess overall visual risk level:
-   - LOW → No visible issues
-   - MEDIUM → Minor concerns / unclear freshness
-   - HIGH → Visible spoilage or damage
+3. Detect expiry or best-before date if clearly visible on packaging.
+4. Assess overall visual risk level (LOW / MEDIUM / HIGH).
 5. Provide short user-facing message.
 
 OUTPUT FORMAT (STRICT JSON ONLY):
@@ -68,20 +69,15 @@ export interface FoodScanResult {
 }
 
 /**
- * Compress and resize a File to a small JPEG data URI suitable for API transmission.
- * This prevents ERR_CONNECTION_CLOSED errors from oversized payloads.
+ * Image compression for API transmission
  */
 function compressImageForApi(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
-
         img.onload = () => {
             URL.revokeObjectURL(url);
-
             let { width, height } = img;
-
-            // Downscale to max dimension
             if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
                 if (width > height) {
                     height = Math.round((height * MAX_IMAGE_DIMENSION) / width);
@@ -91,173 +87,85 @@ function compressImageForApi(file: File): Promise<string> {
                     height = MAX_IMAGE_DIMENSION;
                 }
             }
-
             const canvas = document.createElement("canvas");
             canvas.width = width;
             canvas.height = height;
-
             const ctx = canvas.getContext("2d");
-            if (!ctx) {
-                reject(new Error("Could not create canvas context"));
-                return;
-            }
-
+            if (!ctx) { reject(new Error("Canvas context error")); return; }
             ctx.drawImage(img, 0, 0, width, height);
-            const dataUri = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
-            resolve(dataUri);
+            resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
         };
-
-        img.onerror = () => {
-            URL.revokeObjectURL(url);
-            reject(new Error("Failed to load image for compression"));
-        };
-
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Image load error")); };
         img.src = url;
     });
 }
 
-/**
- * Parse the AI response text into a validated FoodScanResult
- */
 function parseResponse(raw: string): FoodScanResult {
     let text = raw.trim();
-
-    // Strip markdown code fences if present
     if (text.startsWith("```")) {
         text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
     }
-
-    let parsed: Record<string, unknown>;
+    let parsed: any;
     try {
         parsed = JSON.parse(text);
     } catch {
-        // Try to extract JSON from the text
         const match = text.match(/\{[\s\S]*\}/);
-        if (match) {
-            parsed = JSON.parse(match[0]);
-        } else {
-            throw new Error("Could not parse AI response as JSON");
-        }
+        if (match) parsed = JSON.parse(match[0]);
+        else throw new Error("JSON parse error");
     }
-
-    // Normalize and validate
-    const result: FoodScanResult = {
+    return {
         food_identified: String(parsed.food_identified || "Unknown"),
-        expiry_date_visible: "No",
+        expiry_date_visible: String(parsed.expiry_date_visible || "No"),
         detected_expiry_text: String(parsed.detected_expiry_text || "Not Visible"),
-        visible_issues: [],
-        risk_level: "MEDIUM",
-        confidence: "Medium",
-        user_message: String(parsed.user_message || "Unable to fully assess food safety from image."),
+        visible_issues: Array.isArray(parsed.visible_issues) ? parsed.visible_issues.map(String) : [],
+        risk_level: (parsed.risk_level === "LOW" || parsed.risk_level === "HIGH") ? parsed.risk_level : "MEDIUM",
+        confidence: String(parsed.confidence || "Medium") as any,
+        user_message: String(parsed.user_message || "Assessment incomplete."),
     };
-
-    // expiry_date_visible
-    const exp = String(parsed.expiry_date_visible || "No").trim();
-    result.expiry_date_visible = exp.toLowerCase().startsWith("yes") ? "Yes" : "No";
-
-    // risk_level
-    const risk = String(parsed.risk_level || "MEDIUM").toUpperCase().trim();
-    if (risk === "LOW" || risk === "MEDIUM" || risk === "HIGH") {
-        result.risk_level = risk;
-    }
-
-    // confidence
-    const conf = String(parsed.confidence || "Medium").trim();
-    const confCap = conf.charAt(0).toUpperCase() + conf.slice(1).toLowerCase();
-    if (confCap === "Low" || confCap === "Medium" || confCap === "High") {
-        result.confidence = confCap as "Low" | "Medium" | "High";
-    }
-
-    // visible_issues
-    if (Array.isArray(parsed.visible_issues)) {
-        result.visible_issues = parsed.visible_issues.map(String);
-    }
-
-    return result;
 }
 
-/**
- * Fetch with timeout support
- */
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-        const response = await fetch(url, { ...options, signal: controller.signal });
-        return response;
-    } finally {
-        clearTimeout(timeoutId);
-    }
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try { return await fetch(url, { ...options, signal: controller.signal }); }
+    finally { clearTimeout(id); }
 }
 
-/**
- * Scan a food image using Pollinations.ai Vision API.
- * Compresses the image first, retries on failure.
- */
 export async function scanFoodImage(file: File): Promise<FoodScanResult> {
-    // Compress image to reduce payload size (prevents ERR_CONNECTION_CLOSED)
     const dataUri = await compressImageForApi(file);
-
     let lastError: Error | null = null;
+    const models = [PRIMARY_MODEL, FALLBACK_MODEL, "openrouter/auto:free"];
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        try {
-            // Exponential backoff on retries
-            if (attempt > 0) {
-                await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
-            }
-
-            const response = await fetchWithTimeout(
-                POLLINATIONS_API_URL,
-                {
+    for (const modelId of models) {
+        for (let i = 0; i <= MAX_RETRIES; i++) {
+            try {
+                if (i > 0) await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i - 1)));
+                const response = await fetchWithTimeout(OPENROUTER_API_URL, {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${POLLINATIONS_API_KEY}`,
+                        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
                         "Content-Type": "application/json",
+                        "HTTP-Referer": window.location.origin,
+                        "X-Title": "NourishNet Food Scanner",
                     },
                     body: JSON.stringify({
-                        model: "openai",
-                        response_format: { type: "json_object" },
-                        temperature: 0.2,
-                        max_tokens: 1024,
+                        model: modelId,
                         messages: [
                             { role: "system", content: FOOD_SAFETY_SYSTEM_PROMPT },
-                            {
-                                role: "user",
-                                content: [
-                                    { type: "text", text: "Analyze this food image for safety. Return ONLY the JSON object." },
-                                    { type: "image_url", image_url: { url: dataUri } },
-                                ],
-                            },
-                        ],
+                            { role: "user", content: [
+                                { type: "text", text: "Analyze this food for safety. JSON only." },
+                                { type: "image_url", image_url: { url: dataUri } }
+                            ]}
+                        ]
                     }),
-                },
-                REQUEST_TIMEOUT_MS
-            );
-
-            if (!response.ok) {
-                const errorText = await response.text().catch(() => "");
-                throw new Error(`API error ${response.status}: ${errorText.slice(0, 200)}`);
-            }
-
-            const data = await response.json();
-            const content = data?.choices?.[0]?.message?.content;
-
-            if (!content) {
-                throw new Error("Empty response from AI");
-            }
-
-            return parseResponse(content);
-        } catch (err: any) {
-            lastError = err;
-            // Don't retry on abort (user navigated away)
-            if (err.name === "AbortError") {
-                throw new Error("Scan timed out. Please try again.");
-            }
-            // Continue to next retry attempt
+                }, REQUEST_TIMEOUT_MS);
+                if (!response.ok) throw new Error(`API error ${response.status}`);
+                const data = await response.json();
+                const content = data?.choices?.[0]?.message?.content;
+                if (!content) throw new Error("Empty response");
+                return parseResponse(content);
+            } catch (err: any) { lastError = err; if (err.name === "AbortError") break; }
         }
     }
-
-    throw lastError || new Error("Scan failed after multiple attempts");
+    throw lastError || new Error("Scanner failed");
 }

@@ -248,27 +248,56 @@ export default function FoodScanner() {
                                                     )}
 
                                                     {/* Food header with calories */}
-                                                    {r && (
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center justify-between flex-wrap gap-2">
-                                                                <div>
-                                                                    <h3 className="text-xl font-bold text-foreground">{r.food_name}</h3>
-                                                                    <p className="text-sm text-muted-foreground">{r.serving_size}</p>
+                                                            {r && (
+                                                                <div className="space-y-3">
+                                                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                                                        <div>
+                                                                            <h3 className="text-xl font-bold text-foreground">{r.food_name}</h3>
+                                                                            <p className="text-sm text-muted-foreground">{r.serving_size}</p>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 px-3 py-1.5 text-base font-bold gap-1.5 shadow-sm">
+                                                                                <Flame className="w-4 h-4" />
+                                                                                {r.estimated_calories} cal
+                                                                            </Badge>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Macronutrients */}
+                                                                    <div className="flex items-center gap-3 flex-wrap">
+                                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-[10px] font-bold text-rose-500 uppercase tracking-wider">
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                                                            Protein: {r.macros.protein}g
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                                                            Carbs: {r.macros.carbs}g
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-500 uppercase tracking-wider">
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                                                            Fats: {r.macros.fats}g
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Allergens */}
+                                                                    {r.allergens && r.allergens.length > 0 && (
+                                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mr-1">Allergens:</span>
+                                                                            {r.allergens.map((allergen, idx) => (
+                                                                                <Badge key={idx} variant="destructive" className="text-[9px] uppercase px-2 py-0 h-4 bg-red-500/80">
+                                                                                    {allergen}
+                                                                                </Badge>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {r.nutrients_summary && (
+                                                                        <p className="text-xs text-muted-foreground bg-muted/30 rounded-md px-3 py-2 italic border border-muted/20">
+                                                                            🥗 {r.nutrients_summary}
+                                                                        </p>
+                                                                    )}
                                                                 </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 px-3 py-1.5 text-base font-bold gap-1.5">
-                                                                        <Flame className="w-4 h-4" />
-                                                                        {r.estimated_calories} cal
-                                                                    </Badge>
-                                                                </div>
-                                                            </div>
-                                                            {r.nutrients_summary && (
-                                                                <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-                                                                    🥗 {r.nutrients_summary}
-                                                                </p>
                                                             )}
-                                                        </div>
-                                                    )}
                                                 </div>
                                             </div>
                                         </CardContent>

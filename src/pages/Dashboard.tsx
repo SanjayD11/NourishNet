@@ -17,7 +17,7 @@ import CardView from '@/components/FoodViews/CardView';
 import CompactView from '@/components/FoodViews/CompactView';
 import MosaicView from '@/components/FoodViews/MosaicView';
 import ProfileCompletionBanner from '@/components/ProfileCompletionBanner';
-import { MapPin, Search, Filter, Clock, Navigation, AlertTriangle } from 'lucide-react';
+import { MapPin, Search, Filter, Clock, Navigation, AlertTriangle, Plus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { checkAndExpirePosts } from '@/hooks/useFoodPostLifecycle';
@@ -476,15 +476,58 @@ export default function Dashboard() {
             ))}
           </div>
         ) : filteredPosts.length === 0 ? (
-          <Card className="glass-card">
-            <CardContent className="text-center py-12">
-              <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">{t('dashboard.noFoodAvailable')}</h3>
-              <p className="text-muted-foreground">
-                {searchQuery ? "Try adjusting your search terms" : "Be the first to share food in your area!"}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card relative overflow-hidden"
+          >
+            {/* Background Glows */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[40px] rounded-full pointer-events-none" />
+            
+            <CardContent className="relative z-10 text-center py-20 px-6 sm:py-28">
+              <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 mb-8 shadow-inner">
+                <MapPin className="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
+              </div>
+              
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-foreground mb-4 tracking-tight">
+                {t('dashboard.noFoodAvailable')}
+              </h3>
+              
+              <p className="max-w-md mx-auto text-base sm:text-lg text-muted-foreground mb-10 leading-relaxed font-medium">
+                {searchQuery 
+                  ? "We couldn't find any food matching your filters. Try adjusting them to see more results!" 
+                  : "NourishNet is a community effort. Be the first to share surplus food and help your neighbors today!"}
               </p>
+              
+              {!searchQuery && (
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Button 
+                    onClick={() => navigate('/post-food')}
+                    size="lg"
+                    className="w-full sm:w-auto h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg shadow-xl shadow-primary/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] gap-2.5"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Post Surplus Food
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedCategory('all');
+                      setSelectedCuisine('all');
+                      setSelectedTag('all');
+                    }}
+                    size="lg"
+                    className="w-full sm:w-auto h-14 px-8 rounded-2xl border-2 font-bold text-lg transition-all duration-300 hover:bg-muted/50"
+                  >
+                    Reset Filters
+                  </Button>
+                </div>
+              )}
             </CardContent>
-          </Card>
+          </motion.div>
         ) : (
           <>
             {currentView === 'list' && (
